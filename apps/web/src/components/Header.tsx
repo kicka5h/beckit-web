@@ -1,6 +1,9 @@
-import type { ReactElement, ReactNode } from "react";
+import { type ReactElement, type ReactNode, useContext } from "react";
 
 import type { SaveStatus } from "../chapter/chapter-session.ts";
+import { useSyncState } from "../hooks/use-sync-state.ts";
+import { SyncContext } from "../sync/sync-context.ts";
+import { isSettled, statusLabelOf } from "./status-label.ts";
 
 /** Props for `Header`. */
 export interface HeaderProps {
@@ -8,19 +11,15 @@ export interface HeaderProps {
   /** How far the open piece's latest edit has got; none for a page with no text of its own. */
   readonly status?: SaveStatus;
   readonly onTitleClick: () => void;
-  /** Counts shown before the save status; none for a page with no text of its own. */
+  /** Counts shown before the status. */
   readonly children?: ReactNode;
 }
 
-/** The plain words the header shows for each save status. */
-const STATUS_LABELS = {
-  saving: "Saving…",
-  saved: "Saved on this device",
-  failed: "Not saved: this device's storage refused it",
-} as const satisfies Record<SaveStatus, string>;
-
-/** The faint bar above the page: piece title (which opens the outline), counts and save status. */
+/** The faint bar above the page: piece title (which opens the outline), counts and status. */
 export function Header({ title, status, onTitleClick, children }: HeaderProps): ReactElement {
+  const sync = useSyncState(useContext(SyncContext)?.sync);
+  const isShown = status !== undefined || sync !== undefined;
+  const statusClass = isSettled(status, sync) ? "header__status--saved" : "header__status--saving";
   return (
     <header className="header">
       <button type="button" className="header__title" onClick={onTitleClick}>
@@ -28,9 +27,9 @@ export function Header({ title, status, onTitleClick, children }: HeaderProps): 
       </button>
       <div className="header__meta">
         {children}
-        {status && (
-          <span className={`header__status header__status--${status}`} role="status">
-            {STATUS_LABELS[status]}
+        {isShown && (
+          <span className={`header__status ${statusClass}`} role="status">
+            {statusLabelOf(status, sync)}
           </span>
         )}
       </div>

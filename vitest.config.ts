@@ -2,7 +2,7 @@ import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   test: {
-    projects: ["packages/*", "apps/*"],
+    projects: ["packages/*", "apps/*", "server"],
     coverage: {
       provider: "v8",
       // Core is the protected layer (STYLE.md): every line and branch must be tested.

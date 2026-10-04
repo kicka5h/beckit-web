@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@automerge/automerge-repo": "^2.5.6",
+    "@automerge/automerge-repo-network-websocket": "2.5.6",
     "@automerge/automerge-repo-storage-indexeddb": "^2.5.6",
     "@beckit/core": "workspace:*",
     "@fontsource-variable/figtree": "^5.3.0",
@@ -20,6 +21,7 @@
     "@tiptap/pm": "^3.31.4",
     "@tiptap/react": "^3.31.4",
     "@tiptap/starter-kit": "^3.31.4",
+    "firebase": "^12.19.0",
     "react": "^19.3.0",
     "react-dom": "^19.3.0"
   },

@@ -17,9 +17,13 @@ Requires Node 22+ and pnpm 10.
 
 ## Deploy
 
-Every merge to `main` that passes CI is built and published to Firebase Hosting at
-`https://<project-id>.web.app` by `.github/workflows/deploy.yml`, signed in through Workload
-Identity Federation (no stored keys). `infra/setup.sh` creates everything it needs.
+Every merge to `main` that passes CI is shipped by `.github/workflows/deploy.yml`: the sync
+server to Cloud Run, then the app to Firebase Hosting at `https://<project-id>.web.app`, signed in
+through Workload Identity Federation (no stored keys). `infra/setup.sh` creates everything it
+needs.
+
+To run sync locally: `pnpm --filter @beckit/server dev` starts a server with documents in memory
+and the token `dev`; build the app with `VITE_SYNC_URL=http://localhost:8787 VITE_DEV_TOKEN=dev`.
 
 ## Status
 
@@ -27,7 +31,7 @@ Identity Federation (no stored keys). `infra/setup.sh` creates everything it nee
 | ---------------------------------- | ------- |
 | 1. Editor + permanent block ids    | Done    |
 | 2. Offline writer (PWA, IndexedDB) | Done    |
-| 3. Sync (Cloud Run, Cloud Storage) | Next    |
+| 3. Sync (Cloud Run, Cloud Storage) | Started |
 | 4. History core                    | Planned |
 | 5. Review & revert                 | Planned |
 | 6. Alternate takes + backup        | Planned |

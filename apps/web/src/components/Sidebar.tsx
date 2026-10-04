@@ -1,4 +1,4 @@
-import type { ReactElement } from "react";
+import { type ReactElement, useContext } from "react";
 
 import {
   endPlaceOf,
@@ -15,6 +15,8 @@ import {
 
 import type { OpenProject, OpenTarget } from "../project/open-project.ts";
 import { moveTo, renameProject } from "../project/tree-actions.ts";
+import { SyncContext } from "../sync/sync-context.ts";
+import { AccountPanel } from "./AccountPanel.tsx";
 import { PartList } from "./PartList.tsx";
 import { ProjectSwitcher } from "./ProjectSwitcher.tsx";
 
@@ -38,6 +40,7 @@ function dropPlaceOf(doc: ManuscriptDoc, target: OutlineEntry | Part): Place | u
  * projects. Rows open on tap, drag to reorder, and carry a menu of moves for touch screens.
  */
 export function Sidebar({ project, doc, onOpen, onClose }: SidebarProps): ReactElement {
+  const services = useContext(SyncContext);
   const outline = outlineOf(doc);
   const format = formatOf(doc.format);
 
@@ -84,6 +87,7 @@ export function Sidebar({ project, doc, onOpen, onClose }: SidebarProps): ReactE
         />
       ))}
       <ProjectSwitcher project={project} onOpen={onOpen} />
+      {services && <AccountPanel accounts={services.accounts} sync={services.sync} />}
     </nav>
   );
 }

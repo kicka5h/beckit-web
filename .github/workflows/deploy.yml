@@ -1,6 +1,7 @@
 name: Deploy
 
-# Ships main once CI has passed on it. Signs in to Google Cloud through Workload Identity
+# Ships main once CI has passed on it: the sync server to Cloud Run, then the app to Firebase
+# Hosting, built to sync with that server. Signs in to Google Cloud through Workload Identity
 # Federation as beckit-deploy (infra/setup.sh), so no key is stored anywhere.
 on:
   workflow_run:
@@ -18,8 +19,48 @@ permissions:
   id-token: write
 
 jobs:
-  web:
+  # The sync server: build its image, push it to Artifact Registry, roll it out on Cloud Run.
+  server:
     if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    outputs:
+      url: ${{ steps.deploy.outputs.url }}
+    env:
+      PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+      REGION: ${{ secrets.GCP_REGION }}
+      IMAGE: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/beckit/sync:${{ github.event.workflow_run.head_sha || github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_DEPLOY_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@v2
+      - run: gcloud auth configure-docker "${REGION}-docker.pkg.dev" --quiet
+      - run: docker build -f server/Dockerfile -t "$IMAGE" .
+      - run: docker push "$IMAGE"
+      - id: deploy
+        name: Deploy to Cloud Run
+        env:
+          BUCKET: ${{ secrets.BECKIT_BUCKET }}
+          ALLOWED_EMAILS: ${{ secrets.ALLOWED_EMAILS }}
+        # One instance owns all document state (the design doc); sockets live up to Cloud Run's
+        # hour, with affinity so a reconnect finds the same instance. The app checks sign-in
+        # itself, so the service accepts unauthenticated requests.
+        run: |
+          gcloud run deploy beckit-sync --quiet \
+            --image "$IMAGE" --region "$REGION" \
+            --service-account "beckit-sync@${PROJECT_ID}.iam.gserviceaccount.com" \
+            --min-instances 0 --max-instances 1 --timeout 3600 --session-affinity \
+            --allow-unauthenticated \
+            --set-env-vars "^@^BECKIT_BUCKET=${BUCKET}@GOOGLE_CLOUD_PROJECT=${PROJECT_ID}@ALLOWED_EMAILS=${ALLOWED_EMAILS}@ALLOWED_ORIGINS=https://${PROJECT_ID}.web.app,https://${PROJECT_ID}.firebaseapp.com"
+          echo "url=$(gcloud run services describe beckit-sync --region "$REGION" --format 'value(status.url)')" >> "$GITHUB_OUTPUT"
+
+  web:
+    needs: server
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -33,6 +74,9 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @beckit/web build
+        env:
+          VITE_FIREBASE_CONFIG: ${{ secrets.FIREBASE_WEB_CONFIG }}
+          VITE_SYNC_URL: ${{ needs.server.outputs.url }}
       - uses: google-github-actions/auth@v2
         with:
           workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}

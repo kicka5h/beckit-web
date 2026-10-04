@@ -67,6 +67,7 @@ export function PieceView({
       window.removeEventListener("pagehide", save);
       // Leaving this piece for another one: write what was typed before letting go.
       session.save();
+      session.close();
     };
   }, [session]);
 

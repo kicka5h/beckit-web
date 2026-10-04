@@ -24,6 +24,9 @@ Design doc: https://claude.ai/code/artifact/ca3d1c43-425c-43b9-8cf2-044eeae20617
 - `apps/web/src/editor` — TipTap setup, block-id plugin, editor ↔ snapshot conversion.
 - `apps/web/src/chapter` — the open chapter's session (batching edits into Automerge).
 - `apps/web/src/project` — opening the project and piece this device had open.
+- `apps/web/src/sync` — the sync client (WebSocket to the server, library adoption, the badge's state).
+- `apps/web/src/account` — sign-in: Firebase with Google, or a fixed development account.
+- `server` — the sync server for Cloud Run: automerge-repo over WebSockets, documents in Cloud Storage.
 - `apps/web/src/device` — device storage (automerge-repo on IndexedDB), local settings, platform checks.
 - `apps/web/src/facts` — the marquee's `facts.json`, refreshed every six months (`facts-refresh.yml`).
 - `apps/web/e2e` — Playwright tests of the built app, offline included (`pnpm e2e`).

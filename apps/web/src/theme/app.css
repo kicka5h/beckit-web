@@ -297,6 +297,17 @@ button {
   color: var(--quiet-color);
 }
 
+.account__email {
+  margin: 0;
+  padding: 0 var(--space-2);
+  color: var(--quiet-color);
+}
+
+.list__actions button:disabled {
+  color: var(--faint-color);
+  cursor: default;
+}
+
 .new-project__heading {
   margin: 0 0 var(--space-2);
   padding: 0 var(--space-2);

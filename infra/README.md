@@ -61,8 +61,15 @@ rm AuthKey_….p8
 The key passes from the file to Firebase on stdin and is never printed. Without these values the
 script skips Apple and says so.
 
-## The one switch no API covers
+## The two console steps no API covers
 
-Google sign-in needs an OAuth client, and Google only creates that when the provider is first
-switched on in the Firebase console (Authentication → Sign-in method → Google). The script checks
-for it at the end and says so if it is off. It stays on after that.
+Google sign-in needs an OAuth client, and Google only makes or edits those in its consoles:
+
+1. **Switch Google on** in the Firebase console (Authentication → Sign-in method → Google). The
+   script checks for it at the end and says so if it is off.
+2. **Allow sign-in on the app's own domain.** Beckit signs in through `<project-id>.web.app`, so
+   Safari's storage partitioning can't break the redirect. In the Google Cloud console, open APIs &
+   Services → Credentials → "Web client (auto created by Google Service)" and add
+   `https://<project-id>.web.app/__/auth/handler` to its authorized redirect URIs.
+
+Both stay done after that.

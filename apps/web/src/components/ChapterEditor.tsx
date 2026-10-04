@@ -1,5 +1,5 @@
 import { EditorContent, useEditor } from "@tiptap/react";
-import type { ReactElement } from "react";
+import { type ReactElement, useEffect, useSyncExternalStore } from "react";
 
 import type { ChapterSession } from "../chapter/chapter-session.ts";
 import { extensions } from "../editor/extensions.ts";
@@ -37,6 +37,16 @@ export function ChapterEditor({
       onSelectionChange?.(doc.textBetween(selection.from, selection.to, "\n"));
     },
   });
+
+  const revision = useSyncExternalStore(session.subscribe, () => session.revision);
+  useEffect(() => {
+    // Changes from another device merged in: show the merged text, keeping the cursor in place.
+    if (revision === 0) return;
+    const { from, to } = editor.state.selection;
+    editor.commands.setContent(toDocJson(session.blocks), { emitUpdate: false });
+    const size = editor.state.doc.content.size;
+    editor.commands.setTextSelection({ from: Math.min(from, size), to: Math.min(to, size) });
+  }, [editor, session, revision]);
 
   return (
     <main className="page">

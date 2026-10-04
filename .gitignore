@@ -6,3 +6,4 @@ coverage/
 temp/
 test-results/
 playwright-report/
+dist-sync/

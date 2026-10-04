@@ -8,7 +8,8 @@ export interface LibraryDoc {
   projects: string[];
 }
 
-const LIBRARY_KEY = "library";
+/** The device setting holding the library's address. */
+export const LIBRARY_KEY = "library";
 
 /** Opens this device's library of projects, creating it on first launch. */
 export async function openLibrary(
