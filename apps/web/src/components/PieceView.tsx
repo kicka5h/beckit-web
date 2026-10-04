@@ -84,7 +84,7 @@ export function PieceView({
         }}
         onSelectionChange={setSelectedText}
       />
-      <FactsMarquee />
+      <FactsMarquee settings={settings} />
     </>
   );
 }

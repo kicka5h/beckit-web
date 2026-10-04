@@ -16,6 +16,7 @@ export interface Fact {
   readonly refresh: RefreshKind;
 }
 
+const DAY_MILLISECONDS = 86_400_000;
 const CHECKED_DATE = /^\d{4}-\d{2}-\d{2}$/;
 const HTTPS_LINK = /^https:\/\/\S+$/;
 const ANY_TEXT = /\S/;
@@ -50,3 +51,13 @@ export function isFact(value: unknown): value is Fact {
  * is incomplete, so none is ever dropped here unnoticed.
  */
 export const facts: readonly Fact[] = factList.filter(isFact);
+
+/**
+ * The index of the fact to show when the marquee appears: the one after the fact last shown on
+ * this device, or, on a device that has shown none, a different one each day.
+ */
+export function firstFactIndexOf(lastShown: string | undefined, now: number): number {
+  const last = Number(lastShown);
+  if (lastShown === undefined || !Number.isInteger(last)) return Math.floor(now / DAY_MILLISECONDS);
+  return last + 1;
+}
