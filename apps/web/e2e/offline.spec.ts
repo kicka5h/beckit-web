@@ -19,6 +19,7 @@ test.describe("offline writing", () => {
     await context.setOffline(true);
 
     await page.reload();
+    await expect(page.locator(".marquee__fact")).toContainText(/\w/);
     await page.locator(".prose").click();
     await page.keyboard.type(SENTENCE);
     await expect(page.getByRole("status")).toHaveText("Saved on this device");

@@ -1,0 +1,38 @@
+name: Facts refresh
+
+# Every six months, open a task to re-check the facts marquee against its sources. The dates
+# follow the sources: Bowker's title counts came out in March and AAP's annual report in August.
+on:
+  schedule:
+    - cron: "0 14 15 3,9 *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  open-refresh-task:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Open the refresh task
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          checklist="$(jq -r '.[] | "- [ ] \(.fact) ([\(.source)](\(.link)), \(.refresh), checked \(.checked))"' \
+            apps/web/src/facts/facts.json)"
+          gh issue create \
+            --title "Refresh the facts marquee ($(date +%B\ %Y))" \
+            --body "$(cat <<BODY
+          Re-check each fact in \`apps/web/src/facts/facts.json\` against its source, as the design doc asks:
+
+          - Replace yearly figures with the new year's, and update \`checked\`.
+          - Fix or drop a fact whose source has gone.
+          - Facts marked **New survey** change only when the source publishes a new survey.
+
+          The updated list ships with the next deploy, and each device picks it up the next time it is online.
+
+          $checklist
+          BODY
+          )"

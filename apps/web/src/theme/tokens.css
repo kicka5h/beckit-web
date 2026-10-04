@@ -43,6 +43,8 @@
   --outline-overlays: 0;
   --row-indent: var(--space-3);
   --overlay-shadow: 0 0 40px rgb(0 0 0 / 45%);
+  --marquee-height: 40px;
+  --marquee-fade: 600ms;
 
   color-scheme: dark;
 }
@@ -57,5 +59,13 @@
     --page-end-space: 40vh;
     --outline-push: 0px;
     --outline-overlays: 1;
+    --marquee-height: 56px;
+  }
+}
+
+/* Motion-sensitive readers: facts change without fading. */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --marquee-fade: 0ms;
   }
 }

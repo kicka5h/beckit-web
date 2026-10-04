@@ -61,7 +61,7 @@ body {
 .hint {
   position: fixed;
   right: var(--space-3);
-  bottom: var(--space-3);
+  bottom: calc(var(--marquee-height) + var(--space-2));
   left: var(--space-3);
   max-width: calc(var(--prose-measure) + 2 * var(--page-inset));
   margin: 0 auto;
@@ -351,4 +351,45 @@ button {
 
 .new-project__cancel {
   padding: 0 var(--space-2);
+}
+
+.marquee {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: var(--marquee-height);
+  padding: 0 var(--header-inset);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: var(--page-color);
+  color: var(--faint-color);
+  font-size: var(--ui-size);
+}
+
+.workspace--outline .marquee {
+  left: var(--outline-push);
+}
+
+.marquee__fact {
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  text-align: center;
+  animation: marquee-in var(--marquee-fade) ease-out;
+}
+
+.marquee__source {
+  color: var(--quiet-color);
+}
+
+@keyframes marquee-in {
+  from {
+    opacity: 0;
+  }
 }

@@ -7,6 +7,7 @@ import { ChapterSession } from "../chapter/chapter-session.ts";
 import type { DeviceSettings } from "../device/device-settings.ts";
 import { useWritingStats } from "../hooks/use-writing-stats.ts";
 import { ChapterEditor } from "./ChapterEditor.tsx";
+import { FactsMarquee } from "./FactsMarquee.tsx";
 import { Header } from "./Header.tsx";
 import { WritingStats } from "./WritingStats.tsx";
 
@@ -82,6 +83,7 @@ export function PieceView({
         }}
         onSelectionChange={setSelectedText}
       />
+      <FactsMarquee />
     </>
   );
 }
