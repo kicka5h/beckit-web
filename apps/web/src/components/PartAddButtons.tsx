@@ -18,7 +18,7 @@ export function PartAddButtons({
   onAddGroup,
 }: PartAddButtonsProps): ReactElement {
   return (
-    <div className="part__add">
+    <div className="list__actions">
       <button type="button" onClick={onAddPiece}>
         Add {addLabel}
       </button>

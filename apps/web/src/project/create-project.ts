@@ -3,6 +3,8 @@ import type { DocHandle, Repo } from "@automerge/automerge-repo";
 import {
   createManuscriptDoc,
   createNodeId,
+  createPieceNode,
+  endPlaceOf,
   type Format,
   insertNode,
   type ManuscriptDoc,
@@ -10,9 +12,10 @@ import {
   type NodeId,
   type PlannedPage,
   planProject,
+  UNTITLED,
 } from "@beckit/core";
 
-import { createChapterDoc } from "./documents.ts";
+import { storeChapter } from "./documents.ts";
 
 /** A project just created: its manuscript and the empty piece it opens on. */
 export interface CreatedProject {
@@ -20,11 +23,9 @@ export interface CreatedProject {
   readonly firstPieceId: NodeId;
 }
 
-const UNTITLED = "Untitled";
-
 function toNode(repo: Repo, { title, blocks, isContents }: PlannedPage): ManuscriptNode {
   if (isContents) return { kind: "contents", title };
-  return { kind: "piece", title, chapterUrl: createChapterDoc(repo, blocks).url, words: 0 };
+  return createPieceNode(title, storeChapter(repo, blocks).url);
 }
 
 /**
@@ -40,7 +41,7 @@ export function createProject(repo: Repo, format: Format): CreatedProject {
   const manuscript = repo.create(createManuscriptDoc(UNTITLED, format.id));
   manuscript.change((doc) => {
     for (const { part, id, node } of entries) {
-      insertNode(doc, { parent: part, index: doc[part].length }, node, id);
+      insertNode(doc, endPlaceOf(doc, part), node, id);
     }
   });
   const body = entries.find(({ part }) => part === "body");

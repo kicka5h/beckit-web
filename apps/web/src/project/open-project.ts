@@ -1,24 +1,25 @@
 import type { DocHandle, Repo } from "@automerge/automerge-repo";
 
 import {
+  BLANK_FORMAT,
   type ChapterDoc,
-  createNodeId,
+  endPlaceOf,
   findPlace,
+  firstTitleOf,
   formatOf,
-  insertNode,
   isNodeId,
   type ManuscriptDoc,
   type NodeId,
   type Part,
   PARTS,
   piecesOf,
-  type Place,
 } from "@beckit/core";
 
 import type { DeviceSettings } from "../device/device-settings.ts";
 import { createProject } from "./create-project.ts";
-import { createChapterDoc, findStored } from "./documents.ts";
+import { findStored, storeChapter } from "./documents.ts";
 import { addToLibrary, type LibraryDoc, openLibrary } from "./library.ts";
+import { addPiece } from "./tree-actions.ts";
 
 /**
  * The project open on this device: its manuscript, and the page being shown. A piece comes with
@@ -39,22 +40,19 @@ export interface OpenTarget {
 }
 
 const MANUSCRIPT_KEY = "manuscript";
-const NODE_KEY = "piece";
+const NODE_KEY = "node";
 
-/** Adds an empty piece to the end of the body and returns its id. */
+/** Adds an empty piece, titled as the format's first, to the end of the body; returns its id. */
 function addEmptyPiece(repo: Repo, manuscript: DocHandle<ManuscriptDoc>): NodeId {
-  const id = createNodeId();
-  const title = formatOf(manuscript.doc().format).firstTitle;
-  const chapterUrl = createChapterDoc(repo).url;
-  manuscript.change((doc) => {
-    const place: Place = { parent: "body", index: doc.body.length };
-    insertNode(doc, place, { kind: "piece", title, chapterUrl, words: 0 }, id);
-  });
-  return id;
+  const doc = manuscript.doc();
+  return addPiece(repo, manuscript, endPlaceOf(doc, "body"), firstTitleOf(formatOf(doc.format)));
 }
 
 /** The page to open: the one open last time if it is still in the tree, otherwise the first piece. */
-function nodeToOpen(manuscript: ManuscriptDoc, remembered: string | undefined): NodeId | undefined {
+function nodeToOpenOf(
+  manuscript: ManuscriptDoc,
+  remembered: string | undefined,
+): NodeId | undefined {
   if (isNodeId(remembered) && findPlace(manuscript, remembered)) {
     const kind = manuscript.nodes[remembered]?.kind;
     if (kind === "piece" || kind === "contents") return remembered;
@@ -73,7 +71,7 @@ async function openChapter(
   if (node?.kind !== "piece") return undefined;
   const stored = await findStored<ChapterDoc>(repo, node.chapterUrl);
   if (stored) return stored;
-  const chapter = createChapterDoc(repo);
+  const chapter = storeChapter(repo);
   manuscript.change((doc) => {
     const piece = doc.nodes[nodeId];
     if (piece?.kind === "piece") piece.chapterUrl = chapter.url;
@@ -95,10 +93,10 @@ export async function openProject(repo: Repo, settings: DeviceSettings): Promise
   const library = await openLibrary(repo, settings);
   const manuscript =
     (await findStored<ManuscriptDoc>(repo, settings.read(MANUSCRIPT_KEY))) ??
-    createProject(repo, formatOf("blank")).manuscript;
+    createProject(repo, BLANK_FORMAT).manuscript;
   addToLibrary(library, manuscript.url);
   const nodeId =
-    nodeToOpen(manuscript.doc(), settings.read(NODE_KEY)) ?? addEmptyPiece(repo, manuscript);
+    nodeToOpenOf(manuscript.doc(), settings.read(NODE_KEY)) ?? addEmptyPiece(repo, manuscript);
   const chapter = await openChapter(repo, manuscript, nodeId);
   rememberTarget(settings, { manuscriptUrl: manuscript.url, nodeId });
   return { repo, library, manuscript, nodeId, chapter };

@@ -74,8 +74,11 @@ export interface OutlineEntry {
   readonly depth: number;
 }
 
-/** A one-step move in the tree: past a neighbor, into the section above, or out of a section. */
-export type TreeStep = "up" | "down" | "in" | "out";
+/** The one-step moves in the tree: past a neighbor, into the section above, out of a section. */
+export const TREE_STEPS = ["up", "down", "in", "out"] as const;
+
+/** One of `TREE_STEPS`. */
+export type TreeStep = (typeof TREE_STEPS)[number];
 
 /** A position in the tree: the list a node sits in and its index there. */
 export interface Place {
@@ -103,11 +106,26 @@ export function createManuscriptDoc(title: string, format: string): ManuscriptDo
   return { title, format, front: [], body: [], back: [], nodes: {} };
 }
 
+/** Creates a piece with no words yet, its text in the chapter at `chapterUrl`. */
+export function createPieceNode(title: string, chapterUrl: string): PieceNode {
+  return { kind: "piece", title, chapterUrl, words: 0 };
+}
+
 /** The ids listed directly under `parent`. A missing section or a non-section has none. */
 export function childIdsOf(manuscript: ManuscriptDoc, parent: Parent): NodeId[] {
   if (isPart(parent)) return manuscript[parent];
   const node = manuscript.nodes[parent];
   return node?.kind === "section" ? node.children : [];
+}
+
+/** The place at the end of `parent`'s list, where a new or moved node is appended. */
+export function endPlaceOf(manuscript: ManuscriptDoc, parent: Parent): Place {
+  return { parent, index: childIdsOf(manuscript, parent).length };
+}
+
+/** Inserts `id` into `siblings` at `index`, or at the end when the index is past it. */
+function insertId(siblings: NodeId[], index: number, id: NodeId): void {
+  siblings.splice(Math.min(index, siblings.length), 0, id);
 }
 
 /**
@@ -121,8 +139,7 @@ export function insertNode(
   id: NodeId = createNodeId(),
 ): NodeId {
   doc.nodes[id] = node;
-  const siblings = childIdsOf(doc, parent);
-  siblings.splice(Math.min(index, siblings.length), 0, id);
+  insertId(childIdsOf(doc, parent), index, id);
   return id;
 }
 
@@ -145,7 +162,7 @@ export function countProjectWords(manuscript: ManuscriptDoc): number {
   return piecesOf(manuscript, "body").reduce((total, { piece }) => total + piece.words, 0);
 }
 
-/** Where `id` sits in the tree, or undefined if it is not in it. */
+/** Finds where `id` sits in the tree; undefined if it is not in it. */
 export function findPlace(manuscript: ManuscriptDoc, id: NodeId): Place | undefined {
   const parents: Parent[] = [...PARTS, ...Object.keys(manuscript.nodes).filter(isNodeId)];
   for (const parent of parents) {
@@ -173,8 +190,7 @@ export function moveNode(doc: ManuscriptDoc, id: NodeId, { parent, index }: Plac
   const target = isLaterInSameList ? index - 1 : index;
   if (from.parent === parent && from.index === target) return true;
   childIdsOf(doc, from.parent).splice(from.index, 1);
-  const siblings = childIdsOf(doc, parent);
-  siblings.splice(Math.min(target, siblings.length), 0, id);
+  insertId(childIdsOf(doc, parent), target, id);
   return true;
 }
 
@@ -202,7 +218,8 @@ export function removeNode(doc: ManuscriptDoc, id: NodeId): void {
   childIdsOf(doc, place.parent).splice(place.index, 1);
 }
 
-function outlineUnder(
+/** The rows under `parent`, depth first, each `depth` levels deep or deeper. */
+function outlineEntriesOf(
   manuscript: ManuscriptDoc,
   parent: Parent,
   part: Part,
@@ -211,13 +228,13 @@ function outlineUnder(
   return childIdsOf(manuscript, parent).flatMap((id) => {
     const node = manuscript.nodes[id];
     if (!node) return [];
-    return [{ id, node, part, depth }, ...outlineUnder(manuscript, id, part, depth + 1)];
+    return [{ id, node, part, depth }, ...outlineEntriesOf(manuscript, id, part, depth + 1)];
   });
 }
 
 /** The whole tree as rows in reading order: front matter, body, then back matter. */
 export function outlineOf(manuscript: ManuscriptDoc): OutlineEntry[] {
-  return PARTS.flatMap((part) => outlineUnder(manuscript, part, part, 0));
+  return PARTS.flatMap((part) => outlineEntriesOf(manuscript, part, part, 0));
 }
 
 /** The section a node sits in, or undefined when it sits directly in a part. */
@@ -226,25 +243,27 @@ export function sectionOf(manuscript: ManuscriptDoc, id: NodeId): NodeId | undef
   return place && !isPart(place.parent) ? place.parent : undefined;
 }
 
-function placeInSectionAbove(
+/** The end of the section `above`, or undefined when `above` is not a section. */
+function sectionEndPlaceOf(
   manuscript: ManuscriptDoc,
   above: NodeId | undefined,
 ): Place | undefined {
   if (!above || manuscript.nodes[above]?.kind !== "section") return undefined;
-  return { parent: above, index: childIdsOf(manuscript, above).length };
+  return endPlaceOf(manuscript, above);
 }
 
-function placeAfter(manuscript: ManuscriptDoc, id: NodeId): Place | undefined {
+/** The place just after `id` in its list. */
+function nextPlaceOf(manuscript: ManuscriptDoc, id: NodeId): Place | undefined {
   const place = findPlace(manuscript, id);
   return place && { parent: place.parent, index: place.index + 1 };
 }
 
 /**
- * Where a one-step move would put a node, ready for `moveNode`, or undefined if it can't move that
- * way: up or down past a sibling, into the end of the section just above it, or out of its section
- * to just after it.
+ * The place a one-step move would put a node, ready for `moveNode`, or undefined if it can't move
+ * that way: up or down past a sibling, into the end of the section just above it, or out of its
+ * section to just after it.
  */
-export function placeAfterStep(
+export function stepPlaceOf(
   manuscript: ManuscriptDoc,
   id: NodeId,
   step: TreeStep,
@@ -259,9 +278,9 @@ export function placeAfterStep(
     case "down":
       return index < siblings.length - 1 ? { parent, index: index + 2 } : undefined;
     case "in":
-      return placeInSectionAbove(manuscript, siblings[index - 1]);
+      return sectionEndPlaceOf(manuscript, siblings[index - 1]);
     case "out":
-      return isPart(parent) ? undefined : placeAfter(manuscript, parent);
+      return isPart(parent) ? undefined : nextPlaceOf(manuscript, parent);
   }
 }
 

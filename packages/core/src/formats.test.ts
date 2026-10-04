@@ -1,11 +1,25 @@
 import { describe, expect, it } from "vitest";
 
-import { formatOf, FORMATS, planProject } from "./formats.ts";
+import {
+  BLANK_FORMAT,
+  formatOf,
+  FORMATS,
+  groupTitleOf,
+  pieceTitleOf,
+  planProject,
+} from "./formats.ts";
 
 describe("formatOf", () => {
   it("finds a format by id and falls back to Blank", () => {
     expect(formatOf("poetryCollection").unit).toBe("Poem");
-    expect(formatOf("unknown").id).toBe("blank");
+    expect(formatOf("unknown")).toBe(BLANK_FORMAT);
+  });
+});
+
+describe("pieceTitleOf", () => {
+  it("numbers the format's units and groups", () => {
+    expect(pieceTitleOf(formatOf("poetryCollection"), 12)).toBe("Poem 12");
+    expect(groupTitleOf(formatOf("chapterBook"), 2)).toBe("Part 2");
   });
 });
 
@@ -35,7 +49,7 @@ describe("planProject", () => {
   });
 
   it("starts a blank project on one untitled empty page", () => {
-    expect(planProject(formatOf("blank"))).toEqual([
+    expect(planProject(BLANK_FORMAT)).toEqual([
       { part: "body", title: "Untitled", blocks: [], isContents: false },
     ]);
   });

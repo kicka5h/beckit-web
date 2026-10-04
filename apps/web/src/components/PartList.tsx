@@ -2,19 +2,22 @@ import type { DocHandle, Repo } from "@automerge/automerge-repo";
 import type { ReactElement } from "react";
 
 import {
+  endPlaceOf,
   type Format,
+  groupTitleOf,
   type ManuscriptDoc,
   type NodeId,
   type OutlineEntry,
   type Part,
   piecesOf,
+  pieceTitleOf,
 } from "@beckit/core";
 
 import { addPiece, addSection } from "../project/tree-actions.ts";
 import { allowNodeDrop, droppedNodeOf } from "./outline-drag.ts";
+import { PART_LABELS } from "./outline-labels.ts";
 import { OutlineRow } from "./OutlineRow.tsx";
 import { PartAddButtons } from "./PartAddButtons.tsx";
-import { PART_LABELS } from "./RowActions.tsx";
 
 /** Props for `PartList`. */
 export interface PartListProps {
@@ -46,18 +49,18 @@ export function PartList({
   onOpen,
   onDropRow,
 }: PartListProps): ReactElement {
-  const place = { parent: part, index: doc[part].length };
+  const place = endPlaceOf(doc, part);
   const isBody = part === "body";
   const pieceTitle = isBody
-    ? `${format.unit} ${String(piecesOf(doc, "body").length + 1)}`
+    ? pieceTitleOf(format, piecesOf(doc, "body").length + 1)
     : NEW_PAGE_TITLE;
   const sectionCount = entries.filter(({ node }) => node.kind === "section").length;
-  const sectionTitle = `${format.group} ${String(sectionCount + 1)}`;
+  const sectionTitle = groupTitleOf(format, sectionCount + 1);
 
   return (
-    <section className="part">
+    <section className="part list">
       <h2
-        className="part__heading"
+        className="list__heading"
         onDragOver={allowNodeDrop}
         onDrop={(event) => {
           const dragged = droppedNodeOf(event);
@@ -66,7 +69,7 @@ export function PartList({
       >
         {PART_LABELS[part]}
       </h2>
-      <ul className="part__rows">
+      <ul className="list__rows">
         {entries.map((entry) => (
           <OutlineRow
             key={entry.id}

@@ -6,6 +6,8 @@ import {
   countProjectWords,
   createManuscriptDoc,
   createNodeId,
+  createPieceNode,
+  endPlaceOf,
   findPlace,
   insertNode,
   isNodeId,
@@ -19,17 +21,17 @@ import {
   type PieceNode,
   piecesOf,
   type Place,
-  placeAfterStep,
   removeNode,
   renameNode,
   repeatScopeOf,
   sectionOf,
+  stepPlaceOf,
   type TreeStep,
   writePieceWords,
 } from "./manuscript.ts";
 
 function createPiece(title: string, words = 0): PieceNode {
-  return { kind: "piece", title, chapterUrl: `automerge:${title}`, words };
+  return { ...createPieceNode(title, `automerge:${title}`), words };
 }
 
 function createSection(title: string): ManuscriptNode {
@@ -139,6 +141,14 @@ describe("insertNode", () => {
       insertNode(doc, { parent: part, index: 0 }, createPiece("Chapter 1"));
     });
     expect(childIdsOf(next, part)).toHaveLength(1);
+  });
+});
+
+describe("endPlaceOf", () => {
+  it("places after the last node of a part or section", () => {
+    const { manuscript, part } = buildPartAndEpilogue();
+    expect(endPlaceOf(manuscript, "body")).toEqual({ parent: "body", index: 2 });
+    expect(endPlaceOf(manuscript, part)).toEqual({ parent: part, index: 1 });
   });
 });
 
@@ -353,7 +363,7 @@ describe("sectionOf", () => {
   });
 });
 
-describe("placeAfterStep", () => {
+describe("stepPlaceOf", () => {
   /** Body: [section, one, two], with `inner` inside the section. */
   function buildSteps(): { readonly manuscript: Manuscript; readonly ids: readonly NodeId[] } {
     const inner = createNodeId();
@@ -371,38 +381,40 @@ describe("placeAfterStep", () => {
     };
   }
 
-  const cases: readonly (readonly [
-    string,
-    number,
-    TreeStep,
-    Place | "none" | ((ids: readonly NodeId[]) => Place),
-  ])[] = [
-    ["moves up past the node above", 2, "up", { parent: "body", index: 1 }],
-    ["cannot move the first node up", 0, "up", "none"],
-    ["moves down past the node below", 1, "down", { parent: "body", index: 3 }],
-    ["cannot move the last node down", 2, "down", "none"],
+  const moves: readonly (readonly [string, number, TreeStep, (ids: readonly NodeId[]) => Place])[] =
     [
-      "moves into the end of the section above",
-      1,
-      "in",
-      (ids) => ({ parent: idAt(ids, 0), index: 1 }),
-    ],
-    ["cannot move in when the node above is not a section", 2, "in", "none"],
-    ["cannot move the first node in", 0, "in", "none"],
-    ["moves out of a section to just after it", 3, "out", { parent: "body", index: 1 }],
-    ["cannot move out of a part", 1, "out", "none"],
+      ["moves up past the node above", 2, "up", () => ({ parent: "body", index: 1 })],
+      ["moves down past the node below", 1, "down", () => ({ parent: "body", index: 3 })],
+      [
+        "moves into the end of the section above",
+        1,
+        "in",
+        (ids) => ({ parent: idAt(ids, 0), index: 1 }),
+      ],
+      ["moves out of a section to just after it", 3, "out", () => ({ parent: "body", index: 1 })],
+    ];
+
+  it.each(moves)("%s", (_behavior, index, step, placeFor) => {
+    const { manuscript, ids } = buildSteps();
+    expect(stepPlaceOf(manuscript, idAt(ids, index), step)).toEqual(placeFor(ids));
+  });
+
+  const refusals: readonly (readonly [string, number, TreeStep])[] = [
+    ["cannot move the first node up", 0, "up"],
+    ["cannot move the last node down", 2, "down"],
+    ["cannot move in when the node above is not a section", 2, "in"],
+    ["cannot move the first node in", 0, "in"],
+    ["cannot move out of a part", 1, "out"],
   ];
 
-  it.each(cases)("%s", (_label, index, step, expected) => {
+  it.each(refusals)("%s", (_behavior, index, step) => {
     const { manuscript, ids } = buildSteps();
-    const place = placeAfterStep(manuscript, idAt(ids, index), step);
-    if (expected === "none") expect(place).toBeUndefined();
-    else expect(place).toEqual(typeof expected === "function" ? expected(ids) : expected);
+    expect(stepPlaceOf(manuscript, idAt(ids, index), step)).toBeUndefined();
   });
 
   it("finds no step for a node that is not in the tree", () => {
     const { manuscript } = buildSteps();
-    expect(placeAfterStep(manuscript, createNodeId(), "up")).toBeUndefined();
+    expect(stepPlaceOf(manuscript, createNodeId(), "up")).toBeUndefined();
   });
 
   it("finds no way out of a section that has itself left the tree", () => {
@@ -410,7 +422,7 @@ describe("placeAfterStep", () => {
     const detached = Automerge.change(Automerge.clone(manuscript), (doc) => {
       doc.body.splice(0, 1);
     });
-    expect(placeAfterStep(detached, idAt(ids, 3), "out")).toBeUndefined();
+    expect(stepPlaceOf(detached, idAt(ids, 3), "out")).toBeUndefined();
   });
 });
 

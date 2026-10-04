@@ -79,11 +79,8 @@ body {
 /* A quiet, borderless button: menus, dismissals, small actions. */
 .control {
   padding: var(--space-1) var(--space-2);
-  border: 0;
   border-radius: var(--corner-radius);
-  background: transparent;
   color: var(--quiet-color);
-  cursor: pointer;
 }
 
 /* A text field that looks like the text it edits until focused. */
@@ -153,16 +150,13 @@ body {
   background: color-mix(in srgb, var(--accent-color) var(--selection-strength), transparent);
 }
 
+/* Buttons start bare, so each one adds only what it shows. */
 button {
-  font: inherit;
-  color: inherit;
-}
-
-.header__title {
   padding: 0;
   border: 0;
   background: transparent;
   color: inherit;
+  font: inherit;
   cursor: pointer;
 }
 
@@ -193,12 +187,11 @@ button {
   font-weight: var(--heading-weight);
 }
 
-.part,
-.projects {
+.list {
   margin-bottom: var(--space-3);
 }
 
-.part__heading {
+.list__heading {
   margin: 0 0 var(--space-1);
   padding: var(--space-1) var(--space-2);
   color: var(--faint-color);
@@ -206,27 +199,24 @@ button {
   font-weight: inherit;
 }
 
-.part__rows,
+.list__rows,
 .contents {
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.part__add {
+.list__actions {
   display: flex;
   gap: var(--space-2);
   padding: var(--space-1) var(--space-2);
 }
 
-.part__add button,
+.list__actions button,
 .row-actions button,
 .new-project__cancel {
   padding: var(--space-1) 0;
-  border: 0;
-  background: transparent;
   color: var(--accent-color);
-  cursor: pointer;
 }
 
 .row__line {
@@ -256,12 +246,9 @@ button {
   min-width: 0;
   padding: var(--space-1) var(--space-2);
   overflow: hidden;
-  border: 0;
-  background: transparent;
   text-align: left;
   text-overflow: ellipsis;
   white-space: nowrap;
-  cursor: pointer;
 }
 
 .row__title:disabled {
@@ -303,11 +290,7 @@ button {
 }
 
 .contents__link {
-  padding: 0;
-  border: 0;
-  background: transparent;
   text-align: left;
-  cursor: pointer;
 }
 
 .contents__group {
@@ -333,11 +316,8 @@ button {
   gap: var(--space-1);
   width: 100%;
   padding: var(--space-2);
-  border: 0;
   border-radius: var(--corner-radius);
-  background: transparent;
   text-align: left;
-  cursor: pointer;
 }
 
 .new-project__format:hover,

@@ -5,6 +5,7 @@ import type { ManuscriptDoc, NodeId, OutlineEntry } from "@beckit/core";
 
 import { rename } from "../project/tree-actions.ts";
 import { allowNodeDrop, droppedNodeOf, startNodeDrag } from "./outline-drag.ts";
+import { depthClassOf } from "./outline-labels.ts";
 import { RowActions } from "./RowActions.tsx";
 import { RowLine } from "./RowLine.tsx";
 
@@ -35,7 +36,7 @@ export function OutlineRow({
     if (dragged && dragged !== id) onDropRow(dragged, entry);
   }
 
-  const rowClass = `row row--${node.kind} row--depth-${String(Math.min(depth, 3))}`;
+  const rowClass = `row row--${node.kind} ${depthClassOf("row", depth)}`;
   return (
     <li className={isCurrent ? `${rowClass} row--current` : rowClass}>
       <div

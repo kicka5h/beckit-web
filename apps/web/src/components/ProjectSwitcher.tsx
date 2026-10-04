@@ -38,9 +38,9 @@ export function ProjectSwitcher({ project, onOpen }: ProjectSwitcherProps): Reac
     );
   }
   return (
-    <section className="projects">
-      {others.length > 0 && <h2 className="part__heading">Other projects</h2>}
-      <ul className="part__rows">
+    <section className="list">
+      {others.length > 0 && <h2 className="list__heading">Other projects</h2>}
+      <ul className="list__rows">
         {others.map((url) => (
           <li key={url} className="row">
             <button
@@ -55,7 +55,7 @@ export function ProjectSwitcher({ project, onOpen }: ProjectSwitcherProps): Reac
           </li>
         ))}
       </ul>
-      <div className="part__add">
+      <div className="list__actions">
         <button
           type="button"
           onClick={() => {

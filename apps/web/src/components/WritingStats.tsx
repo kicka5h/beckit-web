@@ -11,7 +11,7 @@ export interface WritingStatsProps {
   readonly projectWords: number;
   /** The level of the highlighted text, or of the piece; undefined below two sentences. */
   readonly level: ReadingLevel | undefined;
-  /** Each form of a single highlighted word, with its count in the piece's section. */
+  /** Each form of a single highlighted word, with its count across the piece's repeat scope. */
   readonly forms: readonly WordFormCount[];
 }
 

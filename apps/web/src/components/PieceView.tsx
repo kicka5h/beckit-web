@@ -47,8 +47,8 @@ export function PieceView({
   const savedCursor = settings.read(cursorKey);
 
   useEffect(() => {
-    manuscript.change((doc) => {
-      writePieceWords(doc, pieceId, wordCount);
+    manuscript.change((draft) => {
+      writePieceWords(draft, pieceId, wordCount);
     });
   }, [manuscript, pieceId, wordCount]);
 

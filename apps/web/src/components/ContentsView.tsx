@@ -3,6 +3,7 @@ import type { ReactElement } from "react";
 import { type ManuscriptDoc, type NodeId, outlineOf } from "@beckit/core";
 
 import { Header } from "./Header.tsx";
+import { depthClassOf } from "./outline-labels.ts";
 
 /** Props for `ContentsView`. */
 export interface ContentsViewProps {
@@ -27,15 +28,12 @@ export function ContentsView({
   );
   return (
     <>
-      <Header title={title} status="saved" onTitleClick={onTitleClick} />
+      <Header title={title} onTitleClick={onTitleClick} />
       <main className="page">
         <h1 className="contents__title">{title}</h1>
         <ol className="contents">
           {entries.map(({ id, node, depth }) => (
-            <li
-              key={id}
-              className={`contents__entry contents__entry--depth-${String(Math.min(depth, 3))}`}
-            >
+            <li key={id} className={`contents__entry ${depthClassOf("contents__entry", depth)}`}>
               {node.kind === "piece" ? (
                 <button
                   type="button"

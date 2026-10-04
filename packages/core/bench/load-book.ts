@@ -6,9 +6,9 @@ import * as Automerge from "@automerge/automerge";
 import {
   applyEdit,
   type Chapter,
-  countBlockWords,
   createBlock,
   createChapter,
+  measureBlocks,
   readChapter,
 } from "../src/index.ts";
 
@@ -77,7 +77,10 @@ const bytes = saved.reduce((total, binary) => total + binary.byteLength, 0);
 const chapters = time("cold load (all chapters)", () =>
   saved.map((binary) => Automerge.load<Chapter>(binary)),
 );
-const wordCount = time("read + count words", () => countBlockWords(chapters.flatMap(readChapter)));
+const wordCount = time(
+  "read + count words",
+  () => measureBlocks(chapters.flatMap(readChapter)).words,
+);
 time("cold load (one chapter)", () =>
   readChapter(Automerge.load<Chapter>(saved[0] ?? new Uint8Array())),
 );

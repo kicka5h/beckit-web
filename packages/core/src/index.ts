@@ -20,10 +20,26 @@ export {
   toSnapshot,
 } from "./block.ts";
 export type { Chapter, ChapterDoc, ChapterEdit, StoredBlock } from "./chapter.ts";
-export { applyEdit, createChapter, readChapter, writeEdit } from "./chapter.ts";
+export {
+  applyEdit,
+  createChapter,
+  createChapterDoc,
+  readChapter,
+  toInitialEdit,
+  writeEdit,
+} from "./chapter.ts";
 export { diffEdit } from "./edit.ts";
 export type { Format, FormatPage, PlannedPage } from "./formats.ts";
-export { formatOf, FORMATS, planProject } from "./formats.ts";
+export {
+  BLANK_FORMAT,
+  firstTitleOf,
+  formatOf,
+  FORMATS,
+  groupTitleOf,
+  pieceTitleOf,
+  planProject,
+  UNTITLED,
+} from "./formats.ts";
 export type { BlockId, CurrentBlock, PreviousBlock } from "./ids.ts";
 export { isBlockId, resolveBlockIds } from "./ids.ts";
 export type {
@@ -46,6 +62,8 @@ export {
   countProjectWords,
   createManuscriptDoc,
   createNodeId,
+  createPieceNode,
+  endPlaceOf,
   findPlace,
   insertNode,
   isNodeId,
@@ -54,11 +72,12 @@ export {
   outlineOf,
   PARTS,
   piecesOf,
-  placeAfterStep,
   removeNode,
   renameNode,
   repeatScopeOf,
   sectionOf,
+  stepPlaceOf,
+  TREE_STEPS,
   writePieceWords,
 } from "./manuscript.ts";
 export type { Segment } from "./marks.ts";
@@ -67,6 +86,6 @@ export { memoize } from "./memoize.ts";
 export type { PassageStats, ReadingLevel } from "./readability.ts";
 export { measureBlocks, measureText, readingLevelOf } from "./readability.ts";
 export type { Span } from "./span.ts";
-export { countBlockWords, countWords, wordsOf } from "./text.ts";
+export { wordsOf } from "./text.ts";
 export type { WordFormCount } from "./word-forms.ts";
 export { countWordForms } from "./word-forms.ts";

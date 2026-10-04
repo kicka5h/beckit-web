@@ -114,10 +114,19 @@ export function applyEdit(chapter: Chapter, edit: ChapterEdit): Chapter {
   });
 }
 
+/** Creates the initial value of an empty chapter. */
+export function createChapterDoc(): ChapterDoc {
+  return { order: [], blocks: {} };
+}
+
+/** Converts blocks into the edit that writes them into an empty chapter. */
+export function toInitialEdit(blocks: readonly BlockSnapshot[]): ChapterEdit {
+  return { order: blocks.map((block) => block.id), changed: blocks, removed: [] };
+}
+
 /** Creates a chapter holding `blocks`, recorded as its first change. */
 export function createChapter(blocks: readonly BlockSnapshot[]): Chapter {
-  const empty = Automerge.from<ChapterDoc>({ order: [], blocks: {} });
-  return applyEdit(empty, { order: blocks.map((block) => block.id), changed: blocks, removed: [] });
+  return applyEdit(Automerge.from(createChapterDoc()), toInitialEdit(blocks));
 }
 
 /** Reads the chapter's blocks in order. An id listed twice (after a concurrent move) appears once. */
