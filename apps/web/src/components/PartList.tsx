@@ -14,10 +14,10 @@ import {
 } from "@beckit/core";
 
 import { addPiece, addSection } from "../project/tree-actions.ts";
+import { type AddChoice, AddMenu } from "./AddMenu.tsx";
 import { allowNodeDrop, droppedNodeOf } from "./outline-drag.ts";
 import { PART_LABELS } from "./outline-labels.ts";
 import { OutlineRow } from "./OutlineRow.tsx";
-import { PartAddButtons } from "./PartAddButtons.tsx";
 
 /** Props for `PartList`. */
 export interface PartListProps {
@@ -34,9 +34,49 @@ export interface PartListProps {
 
 const NEW_PAGE_TITLE = "New page";
 
+/** What the "+" beside a part adds: a page, or in the body a piece or a group. */
+function addChoicesOf({
+  repo,
+  manuscript,
+  doc,
+  part,
+  entries,
+  format,
+  onOpen,
+}: Omit<PartListProps, "currentId" | "onDropRow">): AddChoice[] {
+  const place = endPlaceOf(doc, part);
+  if (part !== "body") {
+    return [
+      {
+        label: "Add page",
+        onAdd: () => {
+          onOpen(addPiece(repo, manuscript, place, NEW_PAGE_TITLE));
+        },
+      },
+    ];
+  }
+  const pieceTitle = pieceTitleOf(format, piecesOf(doc, "body").length + 1);
+  const sectionCount = entries.filter(({ node }) => node.kind === "section").length;
+  const sectionTitle = groupTitleOf(format, sectionCount + 1);
+  return [
+    {
+      label: `Add ${format.unit.toLowerCase()}`,
+      onAdd: () => {
+        onOpen(addPiece(repo, manuscript, place, pieceTitle));
+      },
+    },
+    {
+      label: `Add ${format.group.toLowerCase()}`,
+      onAdd: () => {
+        addSection(manuscript, place, sectionTitle);
+      },
+    },
+  ];
+}
+
 /**
- * One part of the outline (front matter, body or back matter) with its rows, and buttons to add a
- * page, or in the body a piece or a group, at its end.
+ * One part of the outline (front matter, body or back matter) with its rows, and a "+" beside its
+ * heading that adds a page at its end, or in the body a piece or a group.
  */
 export function PartList({
   repo,
@@ -49,26 +89,23 @@ export function PartList({
   onOpen,
   onDropRow,
 }: PartListProps): ReactElement {
-  const place = endPlaceOf(doc, part);
-  const isBody = part === "body";
-  const pieceTitle = isBody
-    ? pieceTitleOf(format, piecesOf(doc, "body").length + 1)
-    : NEW_PAGE_TITLE;
-  const sectionCount = entries.filter(({ node }) => node.kind === "section").length;
-  const sectionTitle = groupTitleOf(format, sectionCount + 1);
+  const choices = addChoicesOf({ repo, manuscript, doc, part, entries, format, onOpen });
 
   return (
     <section className="part list">
-      <h2
-        className="list__heading"
-        onDragOver={allowNodeDrop}
-        onDrop={(event) => {
-          const dragged = droppedNodeOf(event);
-          if (dragged) onDropRow(dragged, part);
-        }}
-      >
-        {PART_LABELS[part]}
-      </h2>
+      <div className="list__header">
+        <h2
+          className="list__heading"
+          onDragOver={allowNodeDrop}
+          onDrop={(event) => {
+            const dragged = droppedNodeOf(event);
+            if (dragged) onDropRow(dragged, part);
+          }}
+        >
+          {PART_LABELS[part]}
+        </h2>
+        <AddMenu choices={choices} menuLabel={`Add to ${PART_LABELS[part]}`} />
+      </div>
       <ul className="list__rows">
         {entries.map((entry) => (
           <OutlineRow
@@ -81,16 +118,6 @@ export function PartList({
           />
         ))}
       </ul>
-      <PartAddButtons
-        addLabel={isBody ? format.unit.toLowerCase() : "page"}
-        groupLabel={isBody ? format.group.toLowerCase() : undefined}
-        onAddPiece={() => {
-          onOpen(addPiece(repo, manuscript, place, pieceTitle));
-        }}
-        onAddGroup={() => {
-          addSection(manuscript, place, sectionTitle);
-        }}
-      />
     </section>
   );
 }

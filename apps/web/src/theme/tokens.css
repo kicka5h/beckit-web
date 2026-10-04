@@ -2,7 +2,8 @@
    Names put the subject first, then the property: --prose-size, --ui-font, --header-height. */
 :root,
 [data-theme="dark"] {
-  /* Apple's dark system colors, so the app sits naturally beside native iOS and macOS apps. */
+  /* Apple's dark system colors, with its grays as the accent, so the app sits naturally beside
+     native iOS and macOS apps. */
   --page-color: #1c1c1e;
   --panel-color: #161617;
   --raised-color: #2c2c2e;
@@ -10,8 +11,9 @@
   --ink-color: #f5f5f7;
   --quiet-color: rgb(235 235 245 / 60%);
   --faint-color: rgb(235 235 245 / 30%);
-  --accent-color: #0a84ff;
-  --on-accent-color: #ffffff;
+  --accent-color: #aeaeb2;
+  /* Filled controls and the open page in the outline. */
+  --fill-color: #3a3a3c;
   --warning-color: #ff9f0a;
   /* The translucent "material" behind bars and floating notes, as on iOS. */
   --material-color: rgb(28 28 30 / 72%);
@@ -32,6 +34,7 @@
   --list-heading-size: 20px;
   --large-title-size: 28px;
   --close-glyph-size: 26px;
+  --plus-glyph-size: 28px;
   --title-weight: 600;
   --bold-weight: 700;
 
@@ -58,6 +61,7 @@
   --status-dot-size: 8px;
   --status-dot-border: 1.5px;
   --sidebar-width: 320px;
+  --menu-width: 220px;
   /* How far the page moves aside for the outline. On phones the outline covers the page instead,
      and closes once a page is picked (read by Workspace.tsx). */
   --outline-push: var(--sidebar-width);
