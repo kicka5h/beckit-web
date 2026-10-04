@@ -66,6 +66,17 @@ export interface PieceEntry {
   readonly piece: PieceNode;
 }
 
+/** One row of the tree as a list: a node, the part it is in, and how deep it is nested. */
+export interface OutlineEntry {
+  readonly id: NodeId;
+  readonly node: ManuscriptNode;
+  readonly part: Part;
+  readonly depth: number;
+}
+
+/** A one-step move in the tree: past a neighbor, into the section above, or out of a section. */
+export type TreeStep = "up" | "down" | "in" | "out";
+
 /** A position in the tree: the list a node sits in and its index there. */
 export interface Place {
   readonly parent: Parent;
@@ -132,4 +143,124 @@ export function piecesOf(manuscript: ManuscriptDoc, parent: Parent): PieceEntry[
 /** Counts the words of the whole project: every piece in the body, front and back matter left out. */
 export function countProjectWords(manuscript: ManuscriptDoc): number {
   return piecesOf(manuscript, "body").reduce((total, { piece }) => total + piece.words, 0);
+}
+
+/** Where `id` sits in the tree, or undefined if it is not in it. */
+export function findPlace(manuscript: ManuscriptDoc, id: NodeId): Place | undefined {
+  const parents: Parent[] = [...PARTS, ...Object.keys(manuscript.nodes).filter(isNodeId)];
+  for (const parent of parents) {
+    const index = childIdsOf(manuscript, parent).indexOf(id);
+    if (index !== -1) return { parent, index };
+  }
+  return undefined;
+}
+
+/** Whether `id` is `ancestor` or sits anywhere inside it. */
+function isWithin(manuscript: ManuscriptDoc, id: NodeId, ancestor: NodeId): boolean {
+  if (id === ancestor) return true;
+  return childIdsOf(manuscript, ancestor).some((child) => isWithin(manuscript, id, child));
+}
+
+/**
+ * Moves a node, with everything inside it, to `place` inside an Automerge change. `place.index`
+ * counts the list as it is before the move. A section cannot move into itself; asking for that,
+ * or moving a node that is not in the tree, changes nothing and returns false.
+ */
+export function moveNode(doc: ManuscriptDoc, id: NodeId, { parent, index }: Place): boolean {
+  const from = findPlace(doc, id);
+  if (!from || (!isPart(parent) && isWithin(doc, parent, id))) return false;
+  const isLaterInSameList = from.parent === parent && from.index < index;
+  const target = isLaterInSameList ? index - 1 : index;
+  if (from.parent === parent && from.index === target) return true;
+  childIdsOf(doc, from.parent).splice(from.index, 1);
+  const siblings = childIdsOf(doc, parent);
+  siblings.splice(Math.min(target, siblings.length), 0, id);
+  return true;
+}
+
+/** Renames a node inside an Automerge change, writing only if the title changed. */
+export function renameNode(doc: ManuscriptDoc, id: NodeId, title: string): void {
+  const node = doc.nodes[id];
+  if (node && node.title !== title) node.title = title;
+}
+
+/** Every id at or inside `id`. */
+function subtreeOf(manuscript: ManuscriptDoc, id: NodeId): NodeId[] {
+  // Copied first: Automerge's list proxies, live inside a change, have no flatMap.
+  const children = [...childIdsOf(manuscript, id)];
+  return [id, ...children.flatMap((child) => subtreeOf(manuscript, child))];
+}
+
+/**
+ * Removes a node and everything inside it from the tree, inside an Automerge change. The pieces'
+ * chapter documents are kept, so their text and history survive the removal.
+ */
+export function removeNode(doc: ManuscriptDoc, id: NodeId): void {
+  const place = findPlace(doc, id);
+  if (!place) return;
+  for (const removed of subtreeOf(doc, id)) Reflect.deleteProperty(doc.nodes, removed);
+  childIdsOf(doc, place.parent).splice(place.index, 1);
+}
+
+function outlineUnder(
+  manuscript: ManuscriptDoc,
+  parent: Parent,
+  part: Part,
+  depth: number,
+): OutlineEntry[] {
+  return childIdsOf(manuscript, parent).flatMap((id) => {
+    const node = manuscript.nodes[id];
+    if (!node) return [];
+    return [{ id, node, part, depth }, ...outlineUnder(manuscript, id, part, depth + 1)];
+  });
+}
+
+/** The whole tree as rows in reading order: front matter, body, then back matter. */
+export function outlineOf(manuscript: ManuscriptDoc): OutlineEntry[] {
+  return PARTS.flatMap((part) => outlineUnder(manuscript, part, part, 0));
+}
+
+/** The section a node sits in, or undefined when it sits directly in a part. */
+export function sectionOf(manuscript: ManuscriptDoc, id: NodeId): NodeId | undefined {
+  const place = findPlace(manuscript, id);
+  return place && !isPart(place.parent) ? place.parent : undefined;
+}
+
+function placeInSectionAbove(
+  manuscript: ManuscriptDoc,
+  above: NodeId | undefined,
+): Place | undefined {
+  if (!above || manuscript.nodes[above]?.kind !== "section") return undefined;
+  return { parent: above, index: childIdsOf(manuscript, above).length };
+}
+
+function placeAfter(manuscript: ManuscriptDoc, id: NodeId): Place | undefined {
+  const place = findPlace(manuscript, id);
+  return place && { parent: place.parent, index: place.index + 1 };
+}
+
+/**
+ * Where a one-step move would put a node, ready for `moveNode`, or undefined if it can't move that
+ * way: up or down past a sibling, into the end of the section just above it, or out of its section
+ * to just after it.
+ */
+export function placeAfterStep(
+  manuscript: ManuscriptDoc,
+  id: NodeId,
+  step: TreeStep,
+): Place | undefined {
+  const place = findPlace(manuscript, id);
+  if (!place) return undefined;
+  const { parent, index } = place;
+  const siblings = childIdsOf(manuscript, parent);
+  switch (step) {
+    case "up":
+      return index > 0 ? { parent, index: index - 1 } : undefined;
+    case "down":
+      return index < siblings.length - 1 ? { parent, index: index + 2 } : undefined;
+    case "in":
+      return placeInSectionAbove(manuscript, siblings[index - 1]);
+    case "out":
+      return isPart(parent) ? undefined : placeAfter(manuscript, parent);
+  }
 }

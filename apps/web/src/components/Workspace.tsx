@@ -1,68 +1,74 @@
-import { type ReactElement, useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import type { ReactElement } from "react";
 
-import { countBlockWords, writePieceWords } from "@beckit/core";
-
-import { ChapterSession } from "../chapter/chapter-session.ts";
 import type { DeviceSettings } from "../device/device-settings.ts";
 import { useDoc } from "../hooks/use-doc.ts";
-import type { OpenProject } from "../project/open-project.ts";
-import { ChapterEditor } from "./ChapterEditor.tsx";
-import { Header } from "./Header.tsx";
+import { useSidebar } from "../hooks/use-sidebar.ts";
+import type { OpenProject, OpenTarget } from "../project/open-project.ts";
+import { ContentsView } from "./ContentsView.tsx";
 import { HomeScreenHint } from "./HomeScreenHint.tsx";
+import { PieceView } from "./PieceView.tsx";
+import { Sidebar } from "./Sidebar.tsx";
+
+/** Whether the outline covers the page rather than sitting beside it, as on a phone. */
+function isOutlineOverlaying(): boolean {
+  const value = getComputedStyle(document.documentElement).getPropertyValue("--outline-overlays");
+  return value.trim() === "1";
+}
 
 /** Props for `Workspace`. */
 export interface WorkspaceProps {
   readonly project: OpenProject;
   readonly settings: DeviceSettings;
+  readonly onOpen: (target: OpenTarget) => void;
 }
 
-/** The open piece under its header, saving to this device as the writer types. */
-export function Workspace({ project, settings }: WorkspaceProps): ReactElement {
-  const { repo, manuscript: manuscriptHandle, pieceId, chapter } = project;
-  const [session] = useState(
-    () => new ChapterSession(chapter, { flush: () => repo.flush([chapter.documentId]) }),
-  );
-  const blocks = useSyncExternalStore(session.subscribe, () => session.blocks);
-  const status = useSyncExternalStore(session.subscribe, () => session.status);
-  const manuscript = useDoc(manuscriptHandle);
-  const wordCount = useMemo(() => countBlockWords(blocks), [blocks]);
-  const cursorKey = `cursor.${pieceId}`;
-  const savedCursor = settings.read(cursorKey);
+/** The open page with the project outline beside it, opened from the title in the header. */
+export function Workspace({ project, settings, onOpen }: WorkspaceProps): ReactElement {
+  const doc = useDoc(project.manuscript);
+  const sidebar = useSidebar(settings);
 
-  useEffect(() => {
-    manuscriptHandle.change((doc) => {
-      writePieceWords(doc, pieceId, wordCount);
-    });
-  }, [manuscriptHandle, pieceId, wordCount]);
-
-  useEffect(() => {
-    // Phones rarely fire pagehide when an app is swiped away; going hidden is the reliable signal.
-    function saveWhenHidden(): void {
-      if (document.visibilityState === "hidden") session.save();
-    }
-    function save(): void {
-      session.save();
-    }
-    document.addEventListener("visibilitychange", saveWhenHidden);
-    window.addEventListener("pagehide", save);
-    return () => {
-      document.removeEventListener("visibilitychange", saveWhenHidden);
-      window.removeEventListener("pagehide", save);
-    };
-  }, [session]);
-
-  const piece = manuscript.nodes[pieceId];
+  function openFromOutline(target: OpenTarget): void {
+    if (isOutlineOverlaying()) sidebar.show(false);
+    onOpen(target);
+  }
+  const { nodeId, chapter, manuscript, repo } = project;
+  const title = doc.nodes[nodeId]?.title ?? "";
   return (
-    <>
-      <Header title={piece?.title ?? ""} wordCount={wordCount} status={status} />
-      <HomeScreenHint settings={settings} />
-      <ChapterEditor
-        session={session}
-        initialCursor={savedCursor === undefined ? undefined : Number(savedCursor)}
-        onCursorChange={(position) => {
-          settings.write(cursorKey, String(position));
-        }}
-      />
-    </>
+    <div className={sidebar.isOpen ? "workspace workspace--outline" : "workspace"}>
+      {sidebar.isOpen && (
+        <Sidebar
+          project={project}
+          doc={doc}
+          onOpen={openFromOutline}
+          onClose={() => {
+            sidebar.show(false);
+          }}
+        />
+      )}
+      <div className="workspace__page">
+        {chapter ? (
+          <PieceView
+            key={nodeId}
+            manuscript={manuscript}
+            pieceId={nodeId}
+            title={title}
+            chapter={chapter}
+            flush={() => repo.flush([chapter.documentId])}
+            settings={settings}
+            onTitleClick={sidebar.toggle}
+          />
+        ) : (
+          <ContentsView
+            manuscript={doc}
+            title={title}
+            onOpen={(id) => {
+              onOpen({ nodeId: id });
+            }}
+            onTitleClick={sidebar.toggle}
+          />
+        )}
+        <HomeScreenHint settings={settings} />
+      </div>
+    </div>
   );
 }

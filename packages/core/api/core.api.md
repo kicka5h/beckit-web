@@ -117,6 +117,39 @@ export interface CurrentBlock extends Span {
 export function diffEdit(previous: readonly BlockSnapshot[], next: readonly BlockSnapshot[]): ChapterEdit | undefined;
 
 // @public
+export function findPlace(manuscript: ManuscriptDoc, id: NodeId): Place | undefined;
+
+// @public
+export interface Format {
+    // (undocumented)
+    readonly back: readonly FormatPage[];
+    readonly firstTitle: string;
+    // (undocumented)
+    readonly front: readonly FormatPage[];
+    readonly group: string;
+    // (undocumented)
+    readonly id: string;
+    // (undocumented)
+    readonly name: string;
+    readonly unit: string;
+}
+
+// @public
+export function formatOf(id: string): Format;
+
+// @public
+export interface FormatPage {
+    // (undocumented)
+    readonly isContents?: boolean;
+    readonly text: readonly string[];
+    // (undocumented)
+    readonly title: string;
+}
+
+// @public
+export const FORMATS: readonly Format[];
+
+// @public
 export const HEADING_LEVELS: readonly [1, 2, 3];
 
 // @public
@@ -169,9 +202,27 @@ export type MarkType = (typeof MARK_TYPES)[number];
 export function memoize<Key extends object, Value>(compute: (key: Key) => Value): (key: Key) => Value;
 
 // @public
+export function moveNode(doc: ManuscriptDoc, id: NodeId, input: Place): boolean;
+
+// @public
 export type NodeId = string & {
     readonly __brand: "NodeId";
 };
+
+// @public
+export interface OutlineEntry {
+    // (undocumented)
+    readonly depth: number;
+    // (undocumented)
+    readonly id: NodeId;
+    // (undocumented)
+    readonly node: ManuscriptNode;
+    // (undocumented)
+    readonly part: Part;
+}
+
+// @public
+export function outlineOf(manuscript: ManuscriptDoc): OutlineEntry[];
 
 // @public
 export type Parent = Part | NodeId;
@@ -212,6 +263,24 @@ export interface Place {
 }
 
 // @public
+export function placeAfterStep(manuscript: ManuscriptDoc, id: NodeId, step: TreeStep): Place | undefined;
+
+// @public
+export interface PlannedPage {
+    // (undocumented)
+    readonly blocks: readonly BlockSnapshot[];
+    // (undocumented)
+    readonly isContents: boolean;
+    // (undocumented)
+    readonly part: Part;
+    // (undocumented)
+    readonly title: string;
+}
+
+// @public
+export function planProject(format: Format): PlannedPage[];
+
+// @public
 export interface PreviousBlock extends Span {
     // (undocumented)
     readonly id: BlockId;
@@ -219,6 +288,12 @@ export interface PreviousBlock extends Span {
 
 // @public
 export function readChapter(chapter: Chapter): BlockSnapshot[];
+
+// @public
+export function removeNode(doc: ManuscriptDoc, id: NodeId): void;
+
+// @public
+export function renameNode(doc: ManuscriptDoc, id: NodeId, title: string): void;
 
 // @public
 export function resolveBlockIds(previous: readonly PreviousBlock[], current: readonly CurrentBlock[], isHeldElsewhere?: (id: BlockId) => boolean, mint?: () => BlockId): BlockId[];
@@ -232,6 +307,9 @@ export interface SectionNode {
     // (undocumented)
     title: string;
 }
+
+// @public
+export function sectionOf(manuscript: ManuscriptDoc, id: NodeId): NodeId | undefined;
 
 // @public
 export interface Segment {
@@ -267,6 +345,9 @@ export function toSnapshot(input: BlockFields): BlockSnapshot;
 
 // @public
 export function toSpans(segments: readonly Segment[]): MarkSpan[];
+
+// @public
+export type TreeStep = "up" | "down" | "in" | "out";
 
 // @public
 export function writeEdit(doc: ChapterDoc, edit: ChapterEdit): void;
