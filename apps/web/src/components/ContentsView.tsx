@@ -27,7 +27,7 @@ export function ContentsView({
   );
   return (
     <>
-      <Header title={title} wordCount={undefined} status="saved" onTitleClick={onTitleClick} />
+      <Header title={title} status="saved" onTitleClick={onTitleClick} />
       <main className="page">
         <h1 className="contents__title">{title}</h1>
         <ol className="contents">

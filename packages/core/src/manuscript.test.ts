@@ -22,6 +22,7 @@ import {
   placeAfterStep,
   removeNode,
   renameNode,
+  repeatScopeOf,
   sectionOf,
   type TreeStep,
   writePieceWords,
@@ -410,5 +411,30 @@ describe("placeAfterStep", () => {
       doc.body.splice(0, 1);
     });
     expect(placeAfterStep(detached, idAt(ids, 3), "out")).toBeUndefined();
+  });
+});
+
+describe("repeatScopeOf", () => {
+  it("covers every piece of the section the piece is in", () => {
+    const { manuscript, part, chapter } = buildPartAndEpilogue();
+    const second = createNodeId();
+    const next = Automerge.change(Automerge.clone(manuscript), (doc) => {
+      insertNode(doc, { parent: part, index: 1 }, createPiece("Chapter 2"), second);
+    });
+    expect(repeatScopeOf(next, chapter)).toEqual([chapter, second]);
+  });
+
+  it("covers only the piece when it sits outside the project's sections", () => {
+    const { manuscript, epilogue } = buildPartAndEpilogue();
+    expect(repeatScopeOf(manuscript, epilogue)).toEqual([epilogue]);
+  });
+
+  it("covers the whole body when the project has no sections", () => {
+    const [manuscript, ids] = build([
+      [{ parent: "front", index: 0 }, createPiece("Dedication")],
+      [{ parent: "body", index: 0 }, createPiece("One")],
+      [{ parent: "body", index: 1 }, createPiece("Two")],
+    ]);
+    expect(repeatScopeOf(manuscript, idAt(ids, 1))).toEqual([ids[1], ids[2]]);
   });
 });

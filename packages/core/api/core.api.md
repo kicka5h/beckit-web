@@ -83,6 +83,9 @@ export function countBlockWords(blocks: readonly BlockSnapshot[]): number;
 export function countProjectWords(manuscript: ManuscriptDoc): number;
 
 // @public
+export function countWordForms(texts: readonly string[], word: string): WordFormCount[];
+
+// @public
 export function countWords(text: string): number;
 
 // @public
@@ -199,6 +202,12 @@ export interface MarkSpan extends Span {
 export type MarkType = (typeof MARK_TYPES)[number];
 
 // @public
+export function measureBlocks(blocks: readonly BlockSnapshot[]): PassageStats;
+
+// @public
+export function measureText(text: string): PassageStats;
+
+// @public
 export function memoize<Key extends object, Value>(compute: (key: Key) => Value): (key: Key) => Value;
 
 // @public
@@ -232,6 +241,15 @@ export type Part = (typeof PARTS)[number];
 
 // @public
 export const PARTS: readonly ["front", "body", "back"];
+
+// @public
+export interface PassageStats {
+    readonly difficultWords: number;
+    // (undocumented)
+    readonly sentences: number;
+    // (undocumented)
+    readonly words: number;
+}
 
 // @public
 export interface PieceEntry {
@@ -290,10 +308,24 @@ export interface PreviousBlock extends Span {
 export function readChapter(chapter: Chapter): BlockSnapshot[];
 
 // @public
+export interface ReadingLevel {
+    // (undocumented)
+    readonly label: string;
+    // (undocumented)
+    readonly score: number;
+}
+
+// @public
+export function readingLevelOf(input: PassageStats): ReadingLevel | undefined;
+
+// @public
 export function removeNode(doc: ManuscriptDoc, id: NodeId): void;
 
 // @public
 export function renameNode(doc: ManuscriptDoc, id: NodeId, title: string): void;
+
+// @public
+export function repeatScopeOf(manuscript: ManuscriptDoc, pieceId: NodeId): NodeId[];
 
 // @public
 export function resolveBlockIds(previous: readonly PreviousBlock[], current: readonly CurrentBlock[], isHeldElsewhere?: (id: BlockId) => boolean, mint?: () => BlockId): BlockId[];
@@ -348,6 +380,17 @@ export function toSpans(segments: readonly Segment[]): MarkSpan[];
 
 // @public
 export type TreeStep = "up" | "down" | "in" | "out";
+
+// @public
+export interface WordFormCount {
+    // (undocumented)
+    readonly count: number;
+    // (undocumented)
+    readonly form: string;
+}
+
+// @public
+export function wordsOf(text: string): string[];
 
 // @public
 export function writeEdit(doc: ChapterDoc, edit: ChapterEdit): void;

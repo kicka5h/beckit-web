@@ -16,9 +16,10 @@ body {
 .header {
   position: sticky;
   top: 0;
-  height: var(--header-height);
-  padding: 0 var(--header-inset);
+  min-height: var(--header-height);
+  padding: var(--space-2) var(--header-inset);
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-3);
@@ -29,8 +30,14 @@ body {
 
 .header__meta {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: var(--space-4);
+  justify-content: flex-end;
+  gap: var(--space-1) var(--space-4);
+}
+
+.header__forms {
+  color: var(--accent-color);
 }
 
 .header__status {
