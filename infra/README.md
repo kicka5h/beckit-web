@@ -20,7 +20,7 @@ Override `PROJECT`, `REGION` (default `us-central1`) or `GITHUB_REPO` with envir
 | -------------------- | --------------------------------------------------------------------------------------------------- |
 | Document storage     | Bucket `<project-id>-beckit-docs`, versioned, private                                               |
 | Sync server images   | Artifact Registry Docker repository `beckit`                                                        |
-| Backup GitHub token  | Secret Manager secret `github-backup-token` (empty)                                                 |
+| Backup GitHub token  | Secret Manager secret `github-backup-token` (placeholder `replace-me`)                              |
 | Sync server identity | `beckit-sync` service account, read/write on the bucket                                             |
 | Backup job identity  | `beckit-backup` service account, read bucket and token                                              |
 | CI deploys           | `beckit-deploy` service account, reachable only from this repo through Workload Identity Federation |
@@ -34,8 +34,8 @@ the server code in milestone 3, deployed by CI as `beckit-deploy`.
 1. **Google sign-in**: Firebase console → Authentication → Sign-in method → enable Google.
 2. **Web app config**: Firebase console → Project settings → Add app → Web. The app reads that
    config when sync lands.
-3. **Backup token**: create a fine-grained GitHub token with contents write on the backup
-   repository, then
+3. **Backup token**: the secret holds `replace-me` until you add a fine-grained GitHub token
+   with contents write on the backup repository:
    `printf %s "$TOKEN" | gcloud secrets versions add github-backup-token --data-file=-`.
 4. **CI variables**: copy the values `setup.sh` prints into GitHub → Settings → Secrets and
    variables → Actions → Variables.

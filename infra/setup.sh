@@ -17,6 +17,7 @@ PROJECT_NUMBER="$(gcloud projects describe "$PROJECT" --format='value(projectNum
 BUCKET="${PROJECT_ID}-beckit-docs"
 REPOSITORY="beckit"
 BACKUP_SECRET="github-backup-token"
+SECRET_PLACEHOLDER="replace-me"
 POOL="github"
 SYNC_SA="beckit-sync@${PROJECT_ID}.iam.gserviceaccount.com"
 BACKUP_SA="beckit-backup@${PROJECT_ID}.iam.gserviceaccount.com"
@@ -86,6 +87,9 @@ create_backup_secret() {
   step "Secret ${BACKUP_SECRET}"
   exists gcloud secrets describe "$BACKUP_SECRET" ||
     gcloud secrets create "$BACKUP_SECRET" --replication-policy=automatic
+  # Only seed an empty secret, so a re-run never replaces the real token.
+  [[ -n "$(gcloud secrets versions list "$BACKUP_SECRET" --limit=1 --format='value(name)')" ]] ||
+    printf %s "$SECRET_PLACEHOLDER" | gcloud secrets versions add "$BACKUP_SECRET" --data-file=-
 }
 
 grant_runtime_roles() {
