@@ -6,7 +6,7 @@ safe to re-run.
 ## Run it
 
 From [Cloud Shell](https://shell.cloud.google.com) or any machine signed in with
-`gcloud auth login` as a project owner:
+`gcloud auth login` as a project owner and `gh auth login` as a repository admin:
 
 ```sh
 ./infra/setup.sh
@@ -16,15 +16,16 @@ Override `PROJECT`, `REGION` (default `us-central1`) or `GITHUB_REPO` with envir
 
 ## What it creates
 
-| Piece                | Resource                                                                                            |
-| -------------------- | --------------------------------------------------------------------------------------------------- |
-| Document storage     | Bucket `<project-id>-beckit-docs`, versioned, private                                               |
-| Sync server images   | Artifact Registry Docker repository `beckit`                                                        |
-| Backup GitHub token  | Secret Manager secret `github-backup-token` (placeholder `replace-me`)                              |
-| Sync server identity | `beckit-sync` service account, read/write on the bucket                                             |
-| Backup job identity  | `beckit-backup` service account, read bucket and token                                              |
-| CI deploys           | `beckit-deploy` service account, reachable only from this repo through Workload Identity Federation |
-| App hosting, sign-in | Firebase added to the project, Firebase Auth initialized                                            |
+| Piece                | Resource                                                                                                                                                                                           |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Document storage     | Bucket `<project-id>-beckit-docs`, versioned, private                                                                                                                                              |
+| Sync server images   | Artifact Registry Docker repository `beckit`                                                                                                                                                       |
+| Backup GitHub token  | Secret Manager secret `github-backup-token` (placeholder `replace-me`)                                                                                                                             |
+| Sync server identity | `beckit-sync` service account, read/write on the bucket                                                                                                                                            |
+| Backup job identity  | `beckit-backup` service account, read bucket and token                                                                                                                                             |
+| CI deploys           | `beckit-deploy` service account, reachable only from this repo through Workload Identity Federation                                                                                                |
+| App hosting, sign-in | Firebase added to the project, Firebase Auth initialized                                                                                                                                           |
+| CI configuration     | GitHub Actions secrets `GCP_PROJECT_ID`, `GCP_REGION`, `GCP_WORKLOAD_IDENTITY_PROVIDER`, `GCP_DEPLOY_SERVICE_ACCOUNT`, `BECKIT_BUCKET`, written straight from `gcloud` to GitHub and never printed |
 
 The Cloud Run sync service, the backup Cloud Run job and its Cloud Scheduler trigger arrive with
 the server code in milestone 3, deployed by CI as `beckit-deploy`.
@@ -37,6 +38,4 @@ the server code in milestone 3, deployed by CI as `beckit-deploy`.
 3. **Backup token**: the secret holds `replace-me` until you add a fine-grained GitHub token
    with contents write on the backup repository:
    `printf %s "$TOKEN" | gcloud secrets versions add github-backup-token --data-file=-`.
-4. **CI variables**: copy the values `setup.sh` prints into GitHub → Settings → Secrets and
-   variables → Actions → Variables.
-5. **Budget alert**: Billing → Budgets & alerts, a few dollars a month is the expected spend.
+4. **Budget alert**: Billing → Budgets & alerts, a few dollars a month is the expected spend.

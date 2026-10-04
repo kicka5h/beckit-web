@@ -8,6 +8,9 @@
 # once server/ exists (milestone 3); this script prepares everything they run on.
 set -euo pipefail
 
+gh auth status --hostname github.com >/dev/null 2>&1 ||
+  { echo "Sign in to GitHub first: gh auth login" >&2; exit 1; }
+
 PROJECT="${PROJECT:-789571395800}"
 REGION="${REGION:-us-central1}"
 GITHUB_REPO="${GITHUB_REPO:-kicka5h/beckit-web}"
@@ -145,18 +148,18 @@ add_firebase() {
       "https://identitytoolkit.googleapis.com/v2/projects/${PROJECT_ID}/identityPlatform:initializeAuth" '{}'
 }
 
-print_next_steps() {
-  cat <<EOF
+set_github_secret() {
+  printf %s "$2" | gh secret set "$1" --repo "$GITHUB_REPO"
+}
 
-Done. Values for GitHub Actions (repository variables):
-  GCP_PROJECT_ID=${PROJECT_ID}
-  GCP_REGION=${REGION}
-  GCP_WORKLOAD_IDENTITY_PROVIDER=projects/${PROJECT_NUMBER}/locations/global/workloadIdentityPools/${POOL}/providers/${POOL}
-  GCP_DEPLOY_SERVICE_ACCOUNT=${DEPLOY_SA}
-  BECKIT_BUCKET=${BUCKET}
-
-Manual steps left: see infra/README.md.
-EOF
+set_github_secrets() {
+  step "GitHub Actions secrets on ${GITHUB_REPO}"
+  set_github_secret GCP_PROJECT_ID "$PROJECT_ID"
+  set_github_secret GCP_REGION "$REGION"
+  set_github_secret GCP_WORKLOAD_IDENTITY_PROVIDER \
+    "projects/${PROJECT_NUMBER}/locations/global/workloadIdentityPools/${POOL}/providers/${POOL}"
+  set_github_secret GCP_DEPLOY_SERVICE_ACCOUNT "$DEPLOY_SA"
+  set_github_secret BECKIT_BUCKET "$BUCKET"
 }
 
 enable_apis
@@ -168,4 +171,5 @@ grant_runtime_roles
 grant_deploy_roles
 create_github_federation
 add_firebase
-print_next_steps
+set_github_secrets
+printf '\nDone. Manual steps left: see infra/README.md.\n'
