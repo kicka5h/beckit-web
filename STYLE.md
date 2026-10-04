@@ -183,6 +183,9 @@ We use well-supported, widely adopted libraries, and as few as we can.
 | TipTap (ProseMirror)                                                   | Rich-text editor                      |
 | Automerge                                                              | Local-first storage, sync and history |
 | automerge-repo, its IndexedDB storage adapter                          | Documents stored on the device        |
+| automerge-repo WebSocket adapter (with isomorphic-ws, which it types)  | Sync between devices and the server   |
+| Firebase JS SDK (Auth)                                                 | Google sign-in in the app             |
+| firebase-admin, @google-cloud/storage                                  | Sync server: tokens, document storage |
 | vite-plugin-pwa (Workbox)                                              | Service worker: the app opens offline |
 | ulid                                                                   | Sortable unique block ids             |
 | Fontsource (Literata, Figtree)                                         | Self-hosted fonts that work offline   |

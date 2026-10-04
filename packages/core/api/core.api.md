@@ -331,6 +331,9 @@ export interface ReadingLevel {
 export function readingLevelOf(input: PassageStats): ReadingLevel | undefined;
 
 // @public
+export function rebaseList<Item>(base: readonly Item[], local: readonly Item[], current: readonly Item[]): Item[];
+
+// @public
 export function removeNode(doc: ManuscriptDoc, id: NodeId): void;
 
 // @public

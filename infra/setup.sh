@@ -6,6 +6,8 @@
 #   ./infra/setup.sh                      # project 789571395800, region us-central1
 #   PROJECT=my-project REGION=europe-west1 BUDGET_AMOUNT=20USD ./infra/setup.sh
 #
+# ALLOWED_EMAILS (comma-separated) lists who may sync; it defaults to the account running this.
+#
 # Sign in with Apple is configured when these are set (see infra/README.md):
 #   APPLE_TEAM_ID, APPLE_SERVICES_ID, APPLE_KEY_ID, APPLE_KEY_FILE (the .p8 key)
 #
@@ -324,6 +326,8 @@ set_github_secrets() {
     "projects/${PROJECT_NUMBER}/locations/global/workloadIdentityPools/${POOL}/providers/${POOL}"
   set_github_secret GCP_DEPLOY_SERVICE_ACCOUNT "$DEPLOY_SA"
   set_github_secret BECKIT_BUCKET "$BUCKET"
+  # Until sharing arrives, only the people listed may sync: by default, whoever runs this script.
+  set_github_secret ALLOWED_EMAILS "${ALLOWED_EMAILS:-$(gcloud config get-value account 2>/dev/null)}"
 }
 
 enable_apis

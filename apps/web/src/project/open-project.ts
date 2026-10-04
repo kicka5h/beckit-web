@@ -39,7 +39,8 @@ export interface OpenTarget {
   readonly nodeId?: NodeId;
 }
 
-const MANUSCRIPT_KEY = "manuscript";
+/** The device setting holding the open project's address. */
+export const MANUSCRIPT_KEY = "manuscript";
 const NODE_KEY = "node";
 
 /** Adds an empty piece, titled as the format's first, to the end of the body; returns its id. */

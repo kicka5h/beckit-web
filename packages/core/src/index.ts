@@ -42,6 +42,7 @@ export {
 } from "./formats.ts";
 export type { BlockId, CurrentBlock, PreviousBlock } from "./ids.ts";
 export { isBlockId, resolveBlockIds } from "./ids.ts";
+export { rebaseList } from "./list-sync.ts";
 export type {
   ContentsNode,
   Manuscript,

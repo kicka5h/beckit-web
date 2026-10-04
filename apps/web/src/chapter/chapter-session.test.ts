@@ -2,7 +2,7 @@ import * as Automerge from "@automerge/automerge";
 import type { DocHandle } from "@automerge/automerge-repo";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { type ChapterDoc, createBlock, readChapter } from "@beckit/core";
+import { type ChapterDoc, createBlock, readChapter, writeEdit } from "@beckit/core";
 
 import { storeChapter } from "../project/documents.ts";
 import { createTestRepo } from "../project/test-project.ts";
@@ -82,6 +82,43 @@ describe("ChapterSession", () => {
     session.subscribe(listener);
     session.save();
     expect(listener).not.toHaveBeenCalled();
+  });
+
+  describe("when another device changes the chapter", () => {
+    const second = createBlock("second");
+
+    function changeElsewhere(): void {
+      handle.change((doc) => {
+        writeEdit(doc, { order: [first.id, second.id], changed: [second], removed: [] });
+      });
+    }
+
+    it("hands over the merged blocks and moves its revision", () => {
+      const session = createSession();
+      const listener = vi.fn();
+      session.subscribe(listener);
+      changeElsewhere();
+      expect(session.revision).toBe(1);
+      expect(session.blocks.map(({ text }) => text)).toEqual(["first", "second"]);
+      expect(listener).toHaveBeenCalled();
+    });
+
+    it("saves what was typed here before merging, so neither side is lost", () => {
+      const session = createSession();
+      session.update(() => [{ ...first, text: "first, edited here" }]);
+      changeElsewhere();
+      expect(session.blocks.map(({ text }) => text)).toEqual(["first, edited here", "second"]);
+    });
+
+    it("leaves its own writes alone and stops listening once closed", () => {
+      const session = createSession();
+      session.update(() => [{ ...first, text: "edited" }]);
+      session.save();
+      expect(session.revision).toBe(0);
+      session.close();
+      changeElsewhere();
+      expect(session.revision).toBe(0);
+    });
   });
 
   describe("when reporting whether the chapter is stored", () => {

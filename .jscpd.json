@@ -1,6 +1,6 @@
 {
-  "path": ["packages", "apps"],
-  "ignore": ["**/node_modules/**", "**/dist/**"],
+  "path": ["packages", "apps", "server"],
+  "ignore": ["**/node_modules/**", "**/dist/**", "**/dist-sync/**"],
   "format": ["typescript", "tsx", "css"],
   "minTokens": 40,
   "threshold": 0,

@@ -30,6 +30,8 @@ export default defineConfig({
         globPatterns: ["**/*.{js,css,html,svg,png,woff2,wasm}"],
         // The Automerge engine alone is a few megabytes; the default 2 MB cap would leave it out.
         maximumFileSizeToCacheInBytes: 16 * 1024 * 1024,
+        // Firebase serves its sign-in pages under /__/; the app shell must never stand in for them.
+        navigateFallbackDenylist: [/^\/__\//],
       },
     }),
   ],

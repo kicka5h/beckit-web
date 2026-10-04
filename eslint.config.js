@@ -105,7 +105,9 @@ const comments = {
 };
 
 export default tseslint.config(
-  { ignores: ["**/dist/**", "**/node_modules/**", "**/temp/**", "**/*.config.*"] },
+  {
+    ignores: ["**/dist/**", "**/dist-sync/**", "**/node_modules/**", "**/temp/**", "**/*.config.*"],
+  },
   js.configs.recommended,
   ...tseslint.configs.strictTypeChecked,
   ...tseslint.configs.stylisticTypeChecked,

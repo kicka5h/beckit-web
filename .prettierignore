@@ -5,3 +5,4 @@ temp
 coverage
 test-results
 playwright-report
+dist-sync
