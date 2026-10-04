@@ -56,7 +56,7 @@ export function ProjectSwitcher({ project, onOpen }: ProjectSwitcherProps): Reac
       </div>
       <ul className="list__rows">
         {others.map((url) => (
-          <li key={url} className="row">
+          <li key={url} className="row row--project">
             <button
               type="button"
               className="row__title"

@@ -28,6 +28,7 @@ export function AccountPanel({ accounts, sync }: AccountPanelProps): ReactElemen
           <div className="list__actions">
             <button
               type="button"
+              className="icon icon--account"
               onClick={() => {
                 void accounts.signIn();
               }}
@@ -47,6 +48,7 @@ export function AccountPanel({ accounts, sync }: AccountPanelProps): ReactElemen
       <div className="list__actions">
         <button
           type="button"
+          className="icon icon--account"
           disabled={!canSignOut}
           title={canSignOut ? undefined : "Waiting for every change to reach the server"}
           onClick={() => {

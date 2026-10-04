@@ -26,28 +26,24 @@ export function AddMenu({ choices, menuLabel }: AddMenuProps): ReactElement {
     return (
       <button
         type="button"
-        className="control add-menu__button"
+        className="control icon icon--add"
         aria-label={onlyChoice.label}
         onClick={onlyChoice.onAdd}
-      >
-        +
-      </button>
+      />
     );
   }
   return (
     <div className="add-menu">
       <button
         type="button"
-        className="control add-menu__button"
+        className="control icon icon--add"
         aria-label={menuLabel}
         aria-haspopup="menu"
         aria-expanded={isOpen}
         onClick={() => {
           setIsOpen(!isOpen);
         }}
-      >
-        +
-      </button>
+      />
       {isOpen && (
         <div className="add-menu__items" role="menu">
           {choices.map(({ label, onAdd }) => (

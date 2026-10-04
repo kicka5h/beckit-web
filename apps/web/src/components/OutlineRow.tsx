@@ -27,7 +27,7 @@ export function OutlineRow({
   onOpen,
   onDropRow,
 }: OutlineRowProps): ReactElement {
-  const { id, node, depth } = entry;
+  const { id, node, part, depth } = entry;
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isRenaming, setIsRenaming] = useState(false);
 
@@ -36,7 +36,7 @@ export function OutlineRow({
     if (dragged && dragged !== id) onDropRow(dragged, entry);
   }
 
-  const rowClass = `row row--${node.kind} ${depthClassOf("row", depth)}`;
+  const rowClass = `row row--${node.kind} row--${part} ${depthClassOf("row", depth)}`;
   return (
     <li className={isCurrent ? `${rowClass} row--current` : rowClass}>
       <div

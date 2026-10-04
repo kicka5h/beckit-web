@@ -50,15 +50,6 @@ body {
   font-weight: var(--title-weight);
 }
 
-.header__title::before {
-  content: "";
-  flex: none;
-  width: var(--icon-size);
-  height: var(--icon-size);
-  background: var(--accent-color);
-  mask: var(--sidebar-icon) center / contain no-repeat;
-}
-
 .header__meta {
   display: flex;
   font-size: var(--header-meta-size);
@@ -234,10 +225,6 @@ button {
   font-weight: var(--bold-weight);
 }
 
-.sidebar__top .control {
-  font-size: var(--close-glyph-size);
-}
-
 .list {
   margin-bottom: var(--space-4);
 }
@@ -248,12 +235,13 @@ button {
   justify-content: space-between;
 }
 
+/* A quiet label over a group of rows, as in Claude's and Apple's sidebars. */
 .list__heading {
-  margin: 0 0 var(--space-1);
+  margin: 0;
   padding: var(--space-1) var(--space-2);
-  color: var(--ink-color);
+  color: var(--quiet-color);
   font-size: var(--list-heading-size);
-  font-weight: var(--bold-weight);
+  font-weight: var(--title-weight);
 }
 
 .list__rows,
@@ -279,12 +267,6 @@ button {
 
 .add-menu {
   position: relative;
-}
-
-.add-menu__button {
-  color: var(--accent-color);
-  font-size: var(--plus-glyph-size);
-  font-weight: var(--heading-weight);
 }
 
 /* A pop-up menu of what the "+" can add, drawn as an iOS menu. */
@@ -333,6 +315,38 @@ button {
 
 .row--depth-3 .row__line {
   padding-left: calc(3 * var(--row-indent));
+}
+
+/* What each row is (page, chapter, section, contents, project), shown by its icon. */
+.row__title::before {
+  content: "";
+  display: inline-block;
+  width: var(--row-icon-size);
+  height: var(--row-icon-size);
+  margin-right: var(--space-2);
+  vertical-align: middle;
+  background: var(--quiet-color);
+  mask: var(--icon) center / contain no-repeat;
+}
+
+.row--piece .row__title {
+  --icon: var(--page-icon);
+}
+
+.row--body.row--piece .row__title {
+  --icon: var(--chapter-icon);
+}
+
+.row--section .row__title {
+  --icon: var(--section-icon);
+}
+
+.row--contents .row__title {
+  --icon: var(--contents-icon);
+}
+
+.row--project .row__title {
+  --icon: var(--project-icon);
 }
 
 .row__title {
@@ -493,4 +507,40 @@ button {
   from {
     opacity: 0;
   }
+}
+
+/* An icon before a button's text, or alone in an icon-only button named by its aria-label. */
+.icon {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.icon::before {
+  content: "";
+  flex: none;
+  width: var(--icon-size);
+  height: var(--icon-size);
+  background: var(--accent-color);
+  mask: var(--icon) center / contain no-repeat;
+}
+
+.icon--sidebar {
+  --icon: var(--sidebar-icon);
+}
+
+.icon--add {
+  --icon: var(--add-icon);
+}
+
+.icon--more {
+  --icon: var(--more-icon);
+}
+
+.icon--close {
+  --icon: var(--close-icon);
+}
+
+.icon--account {
+  --icon: var(--account-icon);
 }
