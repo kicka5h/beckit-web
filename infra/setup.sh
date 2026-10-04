@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
-# Creates Beckit's Google Cloud foundation. Safe to re-run: each step skips what already exists.
+# Creates Beckit's Google Cloud foundation and wires it to GitHub. Safe to re-run: each step
+# skips what already exists. Secret values go straight from one tool to the other and are never
+# printed or written to disk.
 #
 #   ./infra/setup.sh                      # project 789571395800, region us-central1
-#   PROJECT=my-project REGION=europe-west1 ./infra/setup.sh
+#   PROJECT=my-project REGION=europe-west1 BUDGET_AMOUNT=20USD ./infra/setup.sh
 #
 # The Cloud Run sync service, backup job and its schedule are created by the deploy pipeline
 # once server/ exists (milestone 3); this script prepares everything they run on.
@@ -14,13 +16,18 @@ gh auth status --hostname github.com >/dev/null 2>&1 ||
 PROJECT="${PROJECT:-789571395800}"
 REGION="${REGION:-us-central1}"
 GITHUB_REPO="${GITHUB_REPO:-kicka5h/beckit-web}"
+BACKUP_REPO="${BACKUP_REPO:-${GITHUB_REPO}-backup}"
+BUDGET_AMOUNT="${BUDGET_AMOUNT:-10USD}"
 
 PROJECT_ID="$(gcloud projects describe "$PROJECT" --format='value(projectId)')"
 PROJECT_NUMBER="$(gcloud projects describe "$PROJECT" --format='value(projectNumber)')"
 BUCKET="${PROJECT_ID}-beckit-docs"
 REPOSITORY="beckit"
-BACKUP_SECRET="github-backup-token"
-SECRET_PLACEHOLDER="replace-me"
+BACKUP_SECRET="github-backup-key"
+LEGACY_BACKUP_SECRET="github-backup-token"
+LEGACY_PLACEHOLDER="replace-me"
+BACKUP_KEY_TITLE="beckit-nightly-backup"
+WEB_APP_NAME="Beckit"
 POOL="github"
 SYNC_SA="beckit-sync@${PROJECT_ID}.iam.gserviceaccount.com"
 BACKUP_SA="beckit-backup@${PROJECT_ID}.iam.gserviceaccount.com"
@@ -34,7 +41,7 @@ exists() { "$@" >/dev/null 2>&1; }
 
 google_api() {
   local method="$1" url="$2" body="${3:-}"
-  curl -fsS -X "$method" "$url" \
+  curl -sS --fail-with-body -X "$method" "$url" \
     -H "Authorization: Bearer $(gcloud auth print-access-token)" \
     -H "x-goog-user-project: ${PROJECT_ID}" \
     -H "Content-Type: application/json" \
@@ -54,7 +61,9 @@ enable_apis() {
     sts.googleapis.com \
     firebase.googleapis.com \
     firebasehosting.googleapis.com \
-    identitytoolkit.googleapis.com
+    identitytoolkit.googleapis.com \
+    cloudbilling.googleapis.com \
+    billingbudgets.googleapis.com
 }
 
 create_registry() {
@@ -90,9 +99,6 @@ create_backup_secret() {
   step "Secret ${BACKUP_SECRET}"
   exists gcloud secrets describe "$BACKUP_SECRET" ||
     gcloud secrets create "$BACKUP_SECRET" --replication-policy=automatic
-  # Only seed an empty secret, so a re-run never replaces the real token.
-  [[ -n "$(gcloud secrets versions list "$BACKUP_SECRET" --limit=1 --format='value(name)')" ]] ||
-    printf %s "$SECRET_PLACEHOLDER" | gcloud secrets versions add "$BACKUP_SECRET" --data-file=-
 }
 
 grant_runtime_roles() {
@@ -148,6 +154,124 @@ add_firebase() {
       "https://identitytoolkit.googleapis.com/v2/projects/${PROJECT_ID}/identityPlatform:initializeAuth" '{}'
 }
 
+create_hosting_site() {
+  step "Firebase Hosting site ${PROJECT_ID}"
+  local sites="https://firebasehosting.googleapis.com/v1beta1/projects/${PROJECT_ID}/sites"
+  exists google_api GET "${sites}/${PROJECT_ID}" ||
+    google_api POST "${sites}?siteId=${PROJECT_ID}" '{}' >/dev/null
+}
+
+# Waits for a Firebase long-running operation and prints its result.
+wait_for_operation() {
+  local operation="$1" result
+  while true; do
+    result="$(google_api GET "https://firebase.googleapis.com/v1beta1/${operation}")"
+    [[ "$(jq -r '.done // false' <<<"$result")" == true ]] && break
+    sleep 2
+  done
+  jq -e '.error | not' <<<"$result" >/dev/null || { jq '.error' <<<"$result" >&2; exit 1; }
+  jq -c '.response' <<<"$result"
+}
+
+web_app_id() {
+  google_api GET "https://firebase.googleapis.com/v1beta1/projects/${PROJECT_ID}/webApps" |
+    jq -r --arg name "$WEB_APP_NAME" '[.apps[]? | select(.displayName == $name)][0].appId // empty'
+}
+
+create_web_app() {
+  step "Firebase web app ${WEB_APP_NAME}"
+  local app_id operation
+  app_id="$(web_app_id)"
+  if [[ -z "$app_id" ]]; then
+    operation="$(google_api POST "https://firebase.googleapis.com/v1beta1/projects/${PROJECT_ID}/webApps" \
+      "{\"displayName\": \"${WEB_APP_NAME}\"}" | jq -r '.name')"
+    app_id="$(wait_for_operation "$operation" | jq -r '.appId')"
+  fi
+  google_api GET "https://firebase.googleapis.com/v1beta1/projects/-/webApps/${app_id}/config" |
+    jq -c . | gh secret set FIREBASE_WEB_CONFIG --repo "$GITHUB_REPO"
+}
+
+# Google offers no API for creating the OAuth client the Google provider needs: Firebase makes one
+# the first time the provider is switched on in its console. So this step checks, and says where.
+check_google_sign_in() {
+  step "Google sign-in"
+  local config
+  config="$(google_api GET \
+    "https://identitytoolkit.googleapis.com/admin/v2/projects/${PROJECT_ID}/defaultSupportedIdpConfigs/google.com" \
+    2>/dev/null || true)"
+  if [[ "$(jq -r '.enabled // false' <<<"${config:-null}")" == true ]]; then
+    echo "Enabled."
+  else
+    echo "Not enabled. One-time switch, no API exists for it: Firebase console → Authentication →" \
+      "Sign-in method → Google → Enable, then re-run this script." >&2
+  fi
+}
+
+create_backup_repo() {
+  step "Backup repository ${BACKUP_REPO}"
+  exists gh repo view "$BACKUP_REPO" ||
+    gh repo create "$BACKUP_REPO" --private --description "Nightly Markdown snapshots from Beckit"
+}
+
+# Whether the backup secret already holds a key, so a re-run never replaces a working one.
+has_backup_key() {
+  [[ -n "$(gcloud secrets versions list "$BACKUP_SECRET" --filter=state=enabled --limit=1 \
+    --format='value(name)')" ]]
+}
+
+remove_backup_deploy_keys() {
+  local key_id
+  for key_id in $(gh repo deploy-key list --repo "$BACKUP_REPO" --json id,title \
+    --jq ".[] | select(.title == \"${BACKUP_KEY_TITLE}\") | .id"); do
+    gh repo deploy-key delete "$key_id" --repo "$BACKUP_REPO"
+  done
+}
+
+# Runs in a subshell so the key directory is removed however it exits.
+store_new_backup_key() (
+  key_dir="$(mktemp -d -p /dev/shm 2>/dev/null || mktemp -d)"
+  trap 'rm -rf "$key_dir"' EXIT
+  ssh-keygen -q -t ed25519 -N "" -C "$BACKUP_KEY_TITLE" -f "${key_dir}/key"
+  remove_backup_deploy_keys
+  gh repo deploy-key add "${key_dir}/key.pub" --repo "$BACKUP_REPO" \
+    --title "$BACKUP_KEY_TITLE" --allow-write
+  gcloud secrets versions add "$BACKUP_SECRET" --data-file="${key_dir}/key" >/dev/null
+)
+
+# The backup job pushes with a deploy key: it can write to the backup repository and nothing else,
+# and unlike a personal token it can be created from a script.
+create_backup_key() {
+  step "Backup deploy key"
+  if has_backup_key; then
+    echo "Already stored in ${BACKUP_SECRET}."
+  else
+    store_new_backup_key
+  fi
+}
+
+# Earlier runs made a token secret holding a placeholder; the deploy key replaces it.
+remove_legacy_backup_secret() {
+  exists gcloud secrets describe "$LEGACY_BACKUP_SECRET" || return 0
+  local value
+  value="$(gcloud secrets versions access latest --secret="$LEGACY_BACKUP_SECRET" 2>/dev/null || true)"
+  [[ "$value" == "$LEGACY_PLACEHOLDER" ]] && gcloud secrets delete "$LEGACY_BACKUP_SECRET" --quiet
+  return 0
+}
+
+create_budget() {
+  step "Budget alert (${BUDGET_AMOUNT} a month)"
+  local account
+  account="$(gcloud billing projects describe "$PROJECT_ID" --format='value(billingAccountName)')"
+  account="${account#billingAccounts/}"
+  [[ -n "$account" ]] || { echo "No billing account linked to ${PROJECT_ID}." >&2; exit 1; }
+  [[ -z "$(gcloud billing budgets list --billing-account="$account" --billing-project="$PROJECT_ID" \
+    --filter="displayName=Beckit" --format='value(name)')" ]] || return 0
+  gcloud billing budgets create --billing-account="$account" --billing-project="$PROJECT_ID" \
+    --display-name=Beckit --budget-amount="$BUDGET_AMOUNT" \
+    --filter-projects="projects/${PROJECT_ID}" \
+    --threshold-rule=percent=0.5 --threshold-rule=percent=0.9 --threshold-rule=percent=1.0
+}
+
 set_github_secret() {
   printf %s "$2" | gh secret set "$1" --repo "$GITHUB_REPO"
 }
@@ -171,5 +295,12 @@ grant_runtime_roles
 grant_deploy_roles
 create_github_federation
 add_firebase
+create_hosting_site
+create_web_app
+create_backup_repo
+create_backup_key
+remove_legacy_backup_secret
+create_budget
 set_github_secrets
-printf '\nDone. Manual steps left: see infra/README.md.\n'
+check_google_sign_in
+printf '\nDone.\n'
