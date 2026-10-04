@@ -1,72 +1,65 @@
+import type { JSONContent } from "@tiptap/core";
+import type { Node as ProseMirrorNode } from "@tiptap/pm/model";
+
 import {
+  type BlockSnapshot,
+  createBlock,
   isMarkType,
   levelOf,
-  newBlock,
-  segmentText,
-  spansFromSegments,
+  memoize,
+  toSegments,
   toSnapshot,
-  type BlockSnapshot,
-  type Segment,
+  toSpans,
 } from "@beckit/core";
-import type { JSONContent } from "@tiptap/core";
-import type { Node as PMNode } from "@tiptap/pm/model";
+
 import { blockIdOf } from "./block-ids.ts";
-import { NODE_FOR_BLOCK, blockTypeOf } from "./schema.ts";
+import { childrenOf } from "./nodes.ts";
+import { blockTypeOf, ID_ATTRIBUTE, NODE_FOR_BLOCK } from "./schema.ts";
 
-// Editor nodes are immutable, so an untouched block keeps its node object and, through this
-// cache, its snapshot object. That is what lets `diffEdit` compare by reference.
-const cache = new WeakMap<PMNode, BlockSnapshot | null>();
-
-function snapshotOf(node: PMNode): BlockSnapshot | null {
+function toBlockSnapshot(node: ProseMirrorNode): BlockSnapshot | undefined {
   const id = blockIdOf(node);
   const type = blockTypeOf(node.type.name);
-  if (!id || !type) return null;
+  if (!id || !type) return undefined;
 
-  const segments: Segment[] = [];
-  node.forEach((child) => {
-    const marks = child.marks.map((m) => m.type.name).filter(isMarkType);
-    if (child.text) segments.push({ text: child.text, marks });
-  });
+  const segments = childrenOf(node).flatMap(({ node: child }) =>
+    child.text
+      ? [{ text: child.text, marks: child.marks.map((mark) => mark.type.name).filter(isMarkType) }]
+      : [],
+  );
   const level: unknown = node.attrs.level;
   return toSnapshot({
     id,
     type,
     level: typeof level === "number" ? level : undefined,
     text: node.textContent,
-    marks: spansFromSegments(segments),
+    marks: toSpans(segments),
   });
 }
 
-const cachedSnapshotOf = (node: PMNode): BlockSnapshot | null => {
-  if (!cache.has(node)) cache.set(node, snapshotOf(node));
-  return cache.get(node) ?? null;
-};
+// Editor nodes are immutable, so an untouched block keeps its node object and therefore its
+// snapshot object. That is what lets `diffEdit` compare by reference.
+const snapshotOf = memoize(toBlockSnapshot);
 
-/** Editor document → blocks. */
-export function snapshotsOf(doc: PMNode): BlockSnapshot[] {
-  const blocks: BlockSnapshot[] = [];
-  doc.forEach((node) => {
-    const snapshot = cachedSnapshotOf(node);
-    if (snapshot) blocks.push(snapshot);
-  });
-  return blocks;
+/** Converts the editor document into blocks. */
+export function toSnapshots(doc: ProseMirrorNode): BlockSnapshot[] {
+  return childrenOf(doc).flatMap(({ node }) => snapshotOf(node) ?? []);
 }
 
-const blockJSON = (block: BlockSnapshot): JSONContent => {
+function toBlockJson(block: BlockSnapshot): JSONContent {
   const level = levelOf(block);
   return {
     type: NODE_FOR_BLOCK[block.type],
-    attrs: level === undefined ? { id: block.id } : { id: block.id, level },
-    content: segmentText(block.text, block.marks).map((s) => ({
+    attrs: level === undefined ? { [ID_ATTRIBUTE]: block.id } : { [ID_ATTRIBUTE]: block.id, level },
+    content: toSegments(block.text, block.marks).map(({ text, marks }) => ({
       type: "text",
-      text: s.text,
-      marks: s.marks.map((mark) => ({ type: mark })),
+      text,
+      marks: marks.map((mark) => ({ type: mark })),
     })),
   };
-};
+}
 
-/** Blocks → editor document. An empty chapter opens on one empty paragraph. */
-export function toDocJSON(blocks: readonly BlockSnapshot[]): JSONContent {
-  const content = blocks.length > 0 ? blocks : [newBlock("")];
-  return { type: "doc", content: content.map(blockJSON) };
+/** Converts blocks into an editor document. An empty chapter opens on one empty paragraph. */
+export function toDocJson(blocks: readonly BlockSnapshot[]): JSONContent {
+  const content = blocks.length > 0 ? blocks : [createBlock("")];
+  return { type: "doc", content: content.map(toBlockJson) };
 }

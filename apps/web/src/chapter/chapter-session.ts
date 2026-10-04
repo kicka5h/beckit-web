@@ -1,24 +1,25 @@
-import { applyEdit, diffEdit, readChapter, type BlockSnapshot, type Chapter } from "@beckit/core";
+import { applyEdit, type BlockSnapshot, type Chapter, diffEdit, readChapter } from "@beckit/core";
 
+/** A function that reads the editor's current blocks, called once per save rather than per keystroke. */
 type ReadBlocks = () => readonly BlockSnapshot[];
 
 /**
- * Owns one open chapter. The editor reports each change; the session waits for a pause in
+ * The owner of one open chapter. The editor reports each change; the session waits for a pause in
  * typing, then reads the blocks once and writes one Automerge change, so history stays compact
  * and keystrokes stay cheap. It is also a React external store (`subscribe` + `blocks`).
  */
 export class ChapterSession {
-  #doc: Chapter;
+  #chapter: Chapter;
   #written: readonly BlockSnapshot[];
-  #pending: ReadBlocks | null = null;
+  #pending: ReadBlocks | undefined;
   #timer: ReturnType<typeof setTimeout> | undefined;
   readonly #listeners = new Set<() => void>();
-  readonly #delayMs: number;
+  readonly #delayMilliseconds: number;
 
-  constructor(doc: Chapter, delayMs = 400) {
-    this.#doc = doc;
-    this.#written = readChapter(doc);
-    this.#delayMs = delayMs;
+  constructor(chapter: Chapter, delayMilliseconds = 400) {
+    this.#chapter = chapter;
+    this.#written = readChapter(chapter);
+    this.#delayMilliseconds = delayMilliseconds;
   }
 
   /** Blocks as of the last save. Stable between saves, as React stores require. */
@@ -28,9 +29,10 @@ export class ChapterSession {
 
   /** The chapter's title. */
   get title(): string {
-    return this.#doc.title;
+    return this.#chapter.title;
   }
 
+  /** Registers a listener called after each save; returns the function that removes it. */
   readonly subscribe = (listener: () => void): (() => void) => {
     this.#listeners.add(listener);
     return () => {
@@ -44,23 +46,21 @@ export class ChapterSession {
     clearTimeout(this.#timer);
     this.#timer = setTimeout(() => {
       this.save();
-    }, this.#delayMs);
+    }, this.#delayMilliseconds);
   }
 
   /** Writes any pending change now and returns the up-to-date chapter. */
   save(): Chapter {
     clearTimeout(this.#timer);
     const read = this.#pending;
-    if (!read) return this.#doc;
-    this.#pending = null;
+    if (!read) return this.#chapter;
+    this.#pending = undefined;
 
     const blocks = read();
     const edit = diffEdit(this.#written, blocks);
-    if (edit) this.#doc = applyEdit(this.#doc, edit);
+    if (edit) this.#chapter = applyEdit(this.#chapter, edit);
     this.#written = blocks;
-    this.#listeners.forEach((listener) => {
-      listener();
-    });
-    return this.#doc;
+    for (const listener of this.#listeners) listener();
+    return this.#chapter;
   }
 }

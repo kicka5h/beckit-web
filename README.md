@@ -29,7 +29,7 @@ Requires Node 22+ and pnpm 10.
 ## Milestone 1 results
 
 - Every top-level block carries a permanent ULID that survives typing, styling, paragraph ↔
-  heading changes, splits, merges, undo/redo and cut-and-paste moves. 36 editor tests and 13 rule tests cover it.
+  heading changes, splits, merges, undo/redo and cut-and-paste moves. Covered by editor and rule tests.
 - Identity follows the bulk of the text: after a split, merge or paste, the block holding most
   of a paragraph's old text keeps its id. Enter at the start of a paragraph, or pasting above
   it, never orphans its history.
@@ -37,4 +37,4 @@ Requires Node 22+ and pnpm 10.
 - Benchmark (laptop, Node 22): a 152,000-word book in 25 chapters is 0.33 MB on disk; one
   chapter loads in about 22 ms, all 25 in about 0.55 s.
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for the code standards.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the code values and [STYLE.md](STYLE.md) for how code is written.

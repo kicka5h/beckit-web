@@ -3,19 +3,20 @@ import type { ChapterEdit } from "./chapter.ts";
 
 /**
  * Compares two editor snapshots by reference. Snapshots of untouched blocks are reused objects
- * (see the editor's snapshot cache), so this is O(blocks) with no text comparison.
- * Returns null when there is nothing to write.
+ * (the editor memoizes them), so this costs O(blocks) with no text comparison.
+ * Returns undefined when there is nothing to write.
  */
 export function diffEdit(
   previous: readonly BlockSnapshot[],
   next: readonly BlockSnapshot[],
-): ChapterEdit | null {
+): ChapterEdit | undefined {
   const seen = new Set(previous);
-  const nextIds = new Set(next.map((b) => b.id));
-  const changed = next.filter((b) => !seen.has(b));
-  const removed = previous.filter((b) => !nextIds.has(b.id)).map((b) => b.id);
-  const sameOrder =
-    previous.length === next.length && next.every((b, i) => previous[i]?.id === b.id);
-  if (changed.length === 0 && sameOrder) return null;
+  const nextIds = new Set(next.map((block) => block.id));
+  const changed = next.filter((block) => !seen.has(block));
+  const removed = previous.filter((block) => !nextIds.has(block.id)).map((block) => block.id);
+  const isSameOrder =
+    previous.length === next.length &&
+    next.every((block, index) => previous[index]?.id === block.id);
+  if (changed.length === 0 && isSameOrder) return undefined;
   return { order: [...nextIds], changed, removed };
 }

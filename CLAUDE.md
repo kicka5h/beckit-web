@@ -7,10 +7,14 @@ Design doc: https://claude.ai/code/artifact/ca3d1c43-425c-43b9-8cf2-044eeae20617
 
 @CONTRIBUTING.md
 
+@STYLE.md
+
 ## Working here
 
 - Run `pnpm check` before calling any task done. Report failures, never weaken a lint rule.
 - Before writing a helper, search `packages/core/src` and `apps/web/src/editor` for an existing one.
+- Treat `packages/core` as protected: change it only when the task requires it, and say so.
+- Match the surrounding code exactly; if STYLE.md and existing code disagree, STYLE.md wins.
 - Keep milestone scope: build what the current milestone in the design doc asks for, nothing more.
 - After finishing a milestone, run a separate review focused only on duplication and readability.
 

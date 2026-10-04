@@ -8,23 +8,23 @@
 
 body {
   margin: 0;
-  background: var(--page);
-  color: var(--ink);
-  font-family: var(--font-ui);
+  background: var(--page-color);
+  color: var(--ink-color);
+  font-family: var(--ui-font);
 }
 
 .header {
   position: sticky;
   top: 0;
   height: var(--header-height);
-  padding: 0 var(--space-4);
+  padding: 0 var(--header-inset);
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-3);
-  background: var(--page);
-  color: var(--quiet);
-  font-size: 13px;
+  background: var(--page-color);
+  color: var(--quiet-color);
+  font-size: var(--ui-size);
 }
 
 .header__meta {
@@ -33,32 +33,32 @@ body {
   gap: var(--space-4);
 }
 
-.status {
+.header__status {
   display: flex;
   align-items: center;
   gap: var(--space-2);
 }
 
-.status::before {
+.header__status::before {
   content: "";
-  width: 7px;
-  height: 7px;
+  width: var(--status-dot-size);
+  height: var(--status-dot-size);
   border-radius: 50%;
-  border: 1.5px solid var(--warning);
+  border: var(--status-dot-border) solid var(--warning-color);
 }
 
 .page {
-  max-width: calc(var(--measure) + 2 * var(--space-5));
+  max-width: calc(var(--prose-measure) + 2 * var(--page-inset));
   margin: 0 auto;
-  padding: var(--space-5) var(--space-5) 30vh;
+  padding: var(--page-inset) var(--page-inset) var(--page-end-space);
 }
 
 .prose {
   outline: none;
-  font-family: var(--font-prose);
+  font-family: var(--prose-font);
   font-size: var(--prose-size);
   line-height: var(--prose-leading);
-  caret-color: var(--accent);
+  caret-color: var(--accent-color);
 }
 
 .prose p {
@@ -69,40 +69,26 @@ body {
 .prose h2,
 .prose h3 {
   margin: 0 0 var(--space-4);
-  font-weight: 500;
-  line-height: 1.3;
+  font-weight: var(--heading-weight);
+  line-height: var(--heading-leading);
 }
 
 .prose h1 {
-  font-size: 1.6em;
+  font-size: var(--title-scale);
 }
 
 .prose hr {
   margin: var(--space-5) auto;
   border: 0;
   text-align: center;
-  color: var(--quiet);
+  color: var(--quiet-color);
 }
 
 .prose hr::after {
   content: "* * *";
-  letter-spacing: 0.4em;
+  letter-spacing: var(--scene-break-tracking);
 }
 
 ::selection {
-  background: color-mix(in srgb, var(--accent) 30%, transparent);
-}
-
-@media (max-width: 600px) {
-  .header {
-    padding: 0 var(--space-3);
-  }
-
-  .page {
-    padding: var(--space-4) var(--space-4) 40vh;
-  }
-
-  .prose {
-    font-size: 18px;
-  }
+  background: color-mix(in srgb, var(--accent-color) var(--selection-strength), transparent);
 }

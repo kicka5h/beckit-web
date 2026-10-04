@@ -1,77 +1,81 @@
 import { monotonicFactory } from "ulid";
 
+import { overlapOf, type Span } from "./span.ts";
+
 /** Permanent identity of a block. Minted once, never reused, never derived from content. */
 export type BlockId = string & { readonly __brand: "BlockId" };
 
-const nextUlid = monotonicFactory();
-const ULID_PATTERN = /^[0-9A-HJKMNP-TV-Z]{26}$/;
-
-/** Mints a new, time-sortable block id. */
-export const newBlockId = (): BlockId => nextUlid() as BlockId;
-
-/** True for strings shaped like an id this app minted. */
-export const isBlockId = (value: unknown): value is BlockId =>
-  typeof value === "string" && ULID_PATTERN.test(value);
-
-/** A span of text in the edited document, end exclusive. */
-export interface Range {
-  readonly from: number;
-  readonly to: number;
-}
-
-/** A block from before the edit: its id and where its text ended up after the edit. */
-export interface PreviousBlock extends Range {
+/** A block from before an edit: its id and where its text ended up after the edit. */
+export interface PreviousBlock extends Span {
   readonly id: BlockId;
 }
 
-/** A block after the edit: where it sits and the id the editor left on it, if any. */
-export interface CurrentBlock extends Range {
-  readonly id: BlockId | null;
+/** A block after an edit: where its text sits and the id the editor left on it, if any. */
+export interface CurrentBlock extends Span {
+  readonly id: BlockId | undefined;
 }
 
-const overlap = (a: Range, b: Range): number =>
-  Math.max(0, Math.min(a.to, b.to) - Math.max(a.from, b.from));
+interface Heir {
+  readonly index: number;
+  readonly shared: number;
+  readonly carriedId: BlockId | undefined;
+}
+
+interface Claim {
+  readonly id: BlockId;
+  readonly shared: number;
+}
+
+const ULID_PATTERN = /^[0-9A-HJKMNP-TV-Z]{26}$/;
+const mintUlid = monotonicFactory();
+
+/** Mints a new, time-sortable block id. */
+export function createBlockId(): BlockId {
+  return mintUlid() as BlockId;
+}
+
+/** Whether a value is an id this app minted. */
+export function isBlockId(value: unknown): value is BlockId {
+  return typeof value === "string" && ULID_PATTERN.test(value);
+}
 
 /**
- * Index of the current block holding most of `previous`'s text. Ties go to a block already
- * carrying the id, then to the earlier block.
+ * The current block holding most of `previous`'s text. Ties go to a block already carrying
+ * the id, then to the earlier block.
  */
-function heirOf(previous: PreviousBlock, current: readonly CurrentBlock[]): number {
-  let best = -1;
-  let bestOverlap = 0;
-  current.forEach((block, index) => {
-    const shared = overlap(previous, block);
-    const tieGoesHere = block.id === previous.id && current[best]?.id !== previous.id;
-    const wins = shared > bestOverlap || (shared === bestOverlap && tieGoesHere);
-    if (shared > 0 && wins) {
-      best = index;
-      bestOverlap = shared;
+function heirOf(previous: PreviousBlock, current: readonly CurrentBlock[]): Heir | undefined {
+  let heir: Heir | undefined;
+  for (const [index, block] of current.entries()) {
+    const shared = overlapOf(previous, block);
+    const best = heir?.shared ?? 0;
+    const isTieWon = block.id === previous.id && heir?.carriedId !== previous.id;
+    if (shared > best || (shared > 0 && shared === best && isTieWon)) {
+      heir = { index, shared, carriedId: block.id };
     }
-  });
-  return best;
+  }
+  return heir;
 }
 
 /**
- * Each current block that inherits an id, mapped to that id. In a merge the bigger contributor
- * wins; ties go to the id the block already carries, then to the earlier block.
+ * Assigns each current block the id it inherits. In a merge the bigger contributor wins; ties go to
+ * the id the block already carries, then to the earlier block.
  */
 function claimHeirs(
   previous: readonly PreviousBlock[],
   current: readonly CurrentBlock[],
 ): Map<number, BlockId> {
-  const claims = new Map<number, { id: BlockId; shared: number }>();
+  const claims = new Map<number, Claim>();
   for (const block of previous) {
     const heir = heirOf(block, current);
-    const target = current[heir];
-    if (!target) continue;
-    const shared = overlap(block, target);
-    const prior = claims.get(heir);
-    const tieGoesHere = target.id === block.id && target.id !== prior?.id;
-    if (!prior || shared > prior.shared || (shared === prior.shared && tieGoesHere)) {
-      claims.set(heir, { id: block.id, shared });
+    if (!heir) continue;
+    const { index, shared, carriedId } = heir;
+    const prior = claims.get(index);
+    const isTieWon = carriedId === block.id && carriedId !== prior?.id;
+    if (!prior || shared > prior.shared || (shared === prior.shared && isTieWon)) {
+      claims.set(index, { id: block.id, shared });
     }
   }
-  return new Map([...claims].map(([index, { id }]) => [index, id]));
+  return new Map([...claims].map(([index, claim]) => [index, claim.id]));
 }
 
 /**
@@ -79,27 +83,25 @@ function claimHeirs(
  * - the block holding most of an old block's text keeps that block's id (Enter, paste, retype);
  * - when blocks merge, the one that contributed the most text gives its id;
  * - ties go to the id a block already carries, then to the earlier block;
- * - a block holding no old text keeps the id it carries if it is unused (a cut paragraph pasted
- *   back, an empty paragraph being typed into), otherwise it gets a new id.
+ * - a block holding no old text keeps the id it carries if that id is free (a cut paragraph
+ *   pasted back, an empty paragraph being typed into); otherwise it gets a new id.
  *
- * `inUseElsewhere` reports ids held by blocks outside the edited range.
+ * `isHeldElsewhere` reports ids held by blocks outside the edited range.
  */
 export function resolveBlockIds(
   previous: readonly PreviousBlock[],
   current: readonly CurrentBlock[],
-  inUseElsewhere: (id: BlockId) => boolean = () => false,
-  mint: () => BlockId = newBlockId,
+  isHeldElsewhere: (id: BlockId) => boolean = () => false,
+  mint: () => BlockId = createBlockId,
 ): BlockId[] {
   const claims = claimHeirs(previous, current);
   const used = new Set(claims.values());
-
   return current.map((block, index) => {
     const claimed = claims.get(index);
     if (claimed) return claimed;
-    const { id } = block;
-    if (id && !used.has(id) && !inUseElsewhere(id)) {
-      used.add(id);
-      return id;
+    if (block.id && !used.has(block.id) && !isHeldElsewhere(block.id)) {
+      used.add(block.id);
+      return block.id;
     }
     return mint();
   });

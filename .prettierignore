@@ -1,2 +1,5 @@
 dist
 pnpm-lock.yaml
+packages/core/api
+temp
+coverage

@@ -1,29 +1,38 @@
 import { describe, expect, it } from "vitest";
+
+import { createBlock } from "./block.ts";
 import { diffEdit } from "./edit.ts";
-import { newBlock } from "./block.ts";
 
 describe("diffEdit", () => {
-  const a = newBlock("a");
-  const b = newBlock("b");
+  const first = createBlock("first");
+  const second = createBlock("second");
 
-  it("returns null when the same snapshots come back", () => {
-    expect(diffEdit([a, b], [a, b])).toBeNull();
+  it("returns undefined when the same snapshots come back", () => {
+    expect(diffEdit([first, second], [first, second])).toBeUndefined();
   });
 
   it("reports only new snapshot objects as changed", () => {
-    const edited = { ...b, text: "b!" };
-    expect(diffEdit([a, b], [a, edited])).toEqual({
-      order: [a.id, b.id],
+    const edited = { ...second, text: "second!" };
+    expect(diffEdit([first, second], [first, edited])).toEqual({
+      order: [first.id, second.id],
       changed: [edited],
       removed: [],
     });
   });
 
   it("reports a reorder with nothing changed", () => {
-    expect(diffEdit([a, b], [b, a])).toEqual({ order: [b.id, a.id], changed: [], removed: [] });
+    expect(diffEdit([first, second], [second, first])).toEqual({
+      order: [second.id, first.id],
+      changed: [],
+      removed: [],
+    });
   });
 
   it("reports a removal", () => {
-    expect(diffEdit([a, b], [a])).toEqual({ order: [a.id], changed: [], removed: [b.id] });
+    expect(diffEdit([first, second], [first])).toEqual({
+      order: [first.id],
+      changed: [],
+      removed: [second.id],
+    });
   });
 });

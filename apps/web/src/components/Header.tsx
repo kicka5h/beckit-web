@@ -1,17 +1,19 @@
 import type { ReactElement } from "react";
 
-interface HeaderProps {
+/** Props for `Header`. */
+export interface HeaderProps {
   readonly title: string;
-  readonly words: number;
+  readonly wordCount: number;
 }
 
-export function Header({ title, words }: HeaderProps): ReactElement {
+/** The faint bar above the page: chapter title, word count and save status. */
+export function Header({ title, wordCount }: HeaderProps): ReactElement {
   return (
     <header className="header">
       <span>{title}</span>
       <div className="header__meta">
-        <span>{words.toLocaleString()} words</span>
-        <span className="status" title="Storage arrives in milestone 2">
+        <span>{wordCount.toLocaleString()} words</span>
+        <span className="header__status" title="Storage arrives in milestone 2">
           Preview: not saved yet
         </span>
       </div>

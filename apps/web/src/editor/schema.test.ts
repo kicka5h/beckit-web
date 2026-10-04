@@ -1,19 +1,30 @@
+import { afterAll, describe, expect, it } from "vitest";
+
 import { MARK_TYPES } from "@beckit/core";
-import { describe, expect, it } from "vitest";
+
 import { NODE_FOR_BLOCK } from "./schema.ts";
-import { makeEditor } from "./test-editor.ts";
+import { createTestEditor } from "./test-editor.ts";
 
-const sorted = (names: Iterable<string>) => [...names].sort((a, b) => a.localeCompare(b));
+function sortNames(names: Iterable<string>): string[] {
+  return [...names].toSorted((a, b) => a.localeCompare(b));
+}
 
-describe("editor schema", () => {
-  const { schema } = makeEditor([]);
+describe("extensions", () => {
+  const editor = createTestEditor([]);
+  const { schema } = editor;
+
+  afterAll(() => {
+    editor.destroy();
+  });
 
   it("has exactly the marks core stores", () => {
-    expect(sorted(Object.keys(schema.marks))).toEqual(sorted(MARK_TYPES));
+    expect(sortNames(Object.keys(schema.marks))).toEqual(sortNames(MARK_TYPES));
   });
 
   it("has exactly the blocks core stores", () => {
-    const blocks = Object.keys(schema.nodes).filter((name) => name !== "doc" && name !== "text");
-    expect(sorted(blocks)).toEqual(sorted(Object.values(NODE_FOR_BLOCK)));
+    const blockNames = Object.keys(schema.nodes).filter(
+      (name) => name !== "doc" && name !== "text",
+    );
+    expect(sortNames(blockNames)).toEqual(sortNames(Object.values(NODE_FOR_BLOCK)));
   });
 });
