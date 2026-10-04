@@ -1,5 +1,6 @@
-import type { ReactElement } from "react";
+import { type ReactElement, useSyncExternalStore } from "react";
 
+import type { AppUpdate } from "../device/app-update.ts";
 import type { DeviceSettings } from "../device/device-settings.ts";
 import { useDoc } from "../hooks/use-doc.ts";
 import { useSidebar } from "../hooks/use-sidebar.ts";
@@ -8,11 +9,13 @@ import { ContentsView } from "./ContentsView.tsx";
 import { HomeScreenHint } from "./HomeScreenHint.tsx";
 import { PieceView } from "./PieceView.tsx";
 import { Sidebar } from "./Sidebar.tsx";
+import { UpdatePrompt } from "./UpdatePrompt.tsx";
 
 /** Props for `Workspace`. */
 export interface WorkspaceProps {
   readonly project: OpenProject;
   readonly settings: DeviceSettings;
+  readonly update: AppUpdate;
   readonly onOpen: (target: OpenTarget) => void;
 }
 
@@ -23,9 +26,10 @@ function isOutlineOverlaying(): boolean {
 }
 
 /** The open page with the project outline beside it, opened from the title in the header. */
-export function Workspace({ project, settings, onOpen }: WorkspaceProps): ReactElement {
+export function Workspace({ project, settings, update, onOpen }: WorkspaceProps): ReactElement {
   const doc = useDoc(project.manuscript);
   const sidebar = useSidebar(settings);
+  const isUpdateWaiting = useSyncExternalStore(update.subscribe, update.isWaiting);
 
   function openFromOutline(target: OpenTarget): void {
     if (isOutlineOverlaying()) sidebar.show(false);
@@ -69,7 +73,12 @@ export function Workspace({ project, settings, onOpen }: WorkspaceProps): ReactE
             onTitleClick={sidebar.toggle}
           />
         )}
-        <HomeScreenHint settings={settings} />
+        {/* Both notes sit in the same spot, and a waiting update matters more. */}
+        {isUpdateWaiting ? (
+          <UpdatePrompt update={update} />
+        ) : (
+          <HomeScreenHint settings={settings} />
+        )}
       </div>
     </div>
   );

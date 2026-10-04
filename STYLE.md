@@ -186,7 +186,7 @@ We use well-supported, widely adopted libraries, and as few as we can.
 | automerge-repo WebSocket adapter (with isomorphic-ws, which it types)  | Sync between devices and the server   |
 | Firebase JS SDK (Auth)                                                 | Google sign-in in the app             |
 | firebase-admin, @google-cloud/storage                                  | Sync server: tokens, document storage |
-| vite-plugin-pwa (Workbox)                                              | Service worker: the app opens offline |
+| vite-plugin-pwa (Workbox, workbox-window)                              | Service worker: offline, updates      |
 | ulid                                                                   | Sortable unique block ids             |
 | Fontsource (Literata, Figtree)                                         | Self-hosted fonts that work offline   |
 | Vite                                                                   | Dev server and build                  |
