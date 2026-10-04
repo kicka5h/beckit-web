@@ -1,8 +1,10 @@
 import { StrictMode, Suspense } from "react";
 import { createRoot } from "react-dom/client";
+import { registerSW } from "virtual:pwa-register";
 
 import { createAccounts } from "./account/create-accounts.ts";
 import { App } from "./App.tsx";
+import { createAppUpdate, reloadWhenReplaced } from "./device/app-update.ts";
 import { createDeviceRepo } from "./device/device-repo.ts";
 import { browserSettings } from "./device/device-settings.ts";
 import { requestPersistentStorage } from "./device/persist-storage.ts";
@@ -19,6 +21,11 @@ if (!root) throw new Error("Missing #root element");
 const repo = createDeviceRepo();
 const initialProject = openProject(repo, browserSettings);
 void requestPersistentStorage();
+const update = createAppUpdate({
+  register: registerSW,
+  flush: () => repo.flush(),
+  reloadWhenReplaced,
+});
 
 /** The sync server's origin: the configured one, or this page's own when it is "/". */
 function serverUrlOf(configured: string): string {
@@ -47,6 +54,7 @@ createRoot(root).render(
         settings={browserSettings}
         initialProject={initialProject}
         services={startSync()}
+        update={update}
       />
     </Suspense>
   </StrictMode>,

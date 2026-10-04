@@ -100,7 +100,7 @@ body {
   background: var(--raised-color);
 }
 
-.hint__dismiss {
+.hint__action {
   color: var(--accent-color);
 }
 
