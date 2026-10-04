@@ -9,6 +9,7 @@ import {
 } from "react";
 
 import { Workspace } from "./components/Workspace.tsx";
+import type { AppUpdate } from "./device/app-update.ts";
 import type { DeviceSettings } from "./device/device-settings.ts";
 import {
   type OpenProject,
@@ -26,13 +27,14 @@ export interface AppProps {
   readonly initialProject: Promise<OpenProject>;
   /** Sign-in and sync, or undefined in a build that keeps everything on the device. */
   readonly services: SyncServices | undefined;
+  readonly update: AppUpdate;
 }
 
 /**
  * The whole app: the writer's open project. Opening another page or project loads it in a
  * transition, so the current page stays on screen until the next one is ready.
  */
-export function App({ repo, settings, initialProject, services }: AppProps): ReactElement {
+export function App({ repo, settings, initialProject, services, update }: AppProps): ReactElement {
   const [loading, setLoading] = useState(initialProject);
   const project = use(loading);
 
@@ -59,7 +61,7 @@ export function App({ repo, settings, initialProject, services }: AppProps): Rea
 
   return (
     <SyncContext value={services}>
-      <Workspace project={project} settings={settings} onOpen={open} />
+      <Workspace project={project} settings={settings} update={update} onOpen={open} />
     </SyncContext>
   );
 }

@@ -11,7 +11,8 @@ export default defineConfig({
     // The service worker precaches the whole app (scripts, styles, fonts, the Automerge engine),
     // so after one online visit the URL opens and works with no network.
     VitePWA({
-      registerType: "autoUpdate",
+      // A new version waits for the writer to reload (UpdatePrompt) instead of swapping under them.
+      registerType: "prompt",
       includeAssets: ["favicon.svg", "apple-touch-icon.png"],
       manifest: {
         name: "Beckit",
@@ -32,6 +33,9 @@ export default defineConfig({
         maximumFileSizeToCacheInBytes: 16 * 1024 * 1024,
         // Firebase serves its sign-in pages under /__/; the app shell must never stand in for them.
         navigateFallbackDenylist: [/^\/__\//],
+        // Take over the page the worker first installs from, so a later update can replace it there
+        // too, and the reload after one (UpdatePrompt) has a page to swap.
+        clientsClaim: true,
       },
     }),
   ],
