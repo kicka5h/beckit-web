@@ -1,32 +1,17 @@
-import { type ReactElement, useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { type ReactElement, use } from "react";
 
-import { countBlockWords } from "@beckit/core";
+import { Workspace } from "./components/Workspace.tsx";
+import type { DeviceSettings } from "./device/device-settings.ts";
+import type { OpenProject } from "./project/open-project.ts";
 
-import { ChapterSession } from "./chapter/chapter-session.ts";
-import { ChapterEditor } from "./components/ChapterEditor.tsx";
-import { Header } from "./components/Header.tsx";
-import { createSeedChapter } from "./seed.ts";
+/** Props for `App`. */
+export interface AppProps {
+  /** The project being opened from device storage; the app suspends until it is ready. */
+  readonly project: Promise<OpenProject>;
+  readonly settings: DeviceSettings;
+}
 
-/** The whole app: one open chapter under its header. */
-export function App(): ReactElement {
-  const [session] = useState(() => new ChapterSession(createSeedChapter()));
-  const blocks = useSyncExternalStore(session.subscribe, () => session.blocks);
-  const wordCount = useMemo(() => countBlockWords(blocks), [blocks]);
-
-  useEffect(() => {
-    function save(): void {
-      session.save();
-    }
-    window.addEventListener("pagehide", save);
-    return () => {
-      window.removeEventListener("pagehide", save);
-    };
-  }, [session]);
-
-  return (
-    <>
-      <Header title={session.title} wordCount={wordCount} />
-      <ChapterEditor session={session} />
-    </>
-  );
+/** The whole app: the writer's open project, once it has loaded from this device. */
+export function App({ project, settings }: AppProps): ReactElement {
+  return <Workspace project={use(project)} settings={settings} />;
 }

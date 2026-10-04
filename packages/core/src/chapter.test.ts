@@ -22,39 +22,37 @@ describe("Chapter", () => {
   const scene = createBlock("", { type: "sceneBreak" });
 
   it("round-trips blocks, levels and marks", () => {
-    const chapter = createChapter("The Crossing", [title, first, scene]);
+    const chapter = createChapter([title, first, scene]);
     expect(readChapter(chapter)).toEqual([title, first, scene]);
   });
 
   it("records nothing when nothing changed", () => {
-    const chapter = createChapter("c", [first]);
+    const chapter = createChapter([first]);
     expect(Automerge.getHeads(editBlocks(chapter, [first]))).toEqual(Automerge.getHeads(chapter));
   });
 
   it("edits text in place", () => {
     const edited = { ...first, text: "The ferry left at first light." };
-    expect(firstBlockOf(editBlocks(createChapter("c", [first]), [edited]))?.text).toBe(edited.text);
+    expect(firstBlockOf(editBlocks(createChapter([first]), [edited]))?.text).toBe(edited.text);
   });
 
   it("turns a heading into a paragraph and drops its level", () => {
     const retyped = { ...createBlock(title.text), id: title.id };
-    expect(readChapter(editBlocks(createChapter("c", [title]), [retyped]))).toEqual([retyped]);
+    expect(readChapter(editBlocks(createChapter([title]), [retyped]))).toEqual([retyped]);
   });
 
   it("changes a heading's level", () => {
     const smaller = { ...title, level: 2 };
-    expect(firstBlockOf(editBlocks(createChapter("c", [title]), [smaller]))).toEqual(smaller);
+    expect(firstBlockOf(editBlocks(createChapter([title]), [smaller]))).toEqual(smaller);
   });
 
   it("replaces marks", () => {
     const bold: BlockSnapshot = { ...first, marks: [{ type: "bold", start: 0, end: 3 }] };
-    expect(firstBlockOf(editBlocks(createChapter("c", [first]), [bold]))?.marks).toEqual(
-      bold.marks,
-    );
+    expect(firstBlockOf(editBlocks(createChapter([first]), [bold]))?.marks).toEqual(bold.marks);
   });
 
   it("removes and reorders blocks by id", () => {
-    const chapter = createChapter("c", [title, first, scene]);
+    const chapter = createChapter([title, first, scene]);
     const next = applyEdit(chapter, {
       order: [scene.id, title.id],
       changed: [],
@@ -65,21 +63,21 @@ describe("Chapter", () => {
   });
 
   it("lists a block once even if its id is in the order twice", () => {
-    const chapter = Automerge.change(createChapter("c", [first]), (doc) => {
+    const chapter = Automerge.change(createChapter([first]), (doc) => {
       doc.order.push(first.id);
     });
     expect(readChapter(chapter)).toEqual([first]);
   });
 
   it("skips an id in the order whose block was deleted on another device", () => {
-    const chapter = Automerge.change(createChapter("c", [first, scene]), (doc) => {
+    const chapter = Automerge.change(createChapter([first, scene]), (doc) => {
       Reflect.deleteProperty(doc.blocks, scene.id);
     });
     expect(readChapter(chapter)).toEqual([first]);
   });
 
   it("ignores marks Beckit doesn't own, such as another tool's annotations", () => {
-    const chapter = Automerge.change(createChapter("c", [first]), (doc) => {
+    const chapter = Automerge.change(createChapter([first]), (doc) => {
       const path = ["blocks", first.id, "text"];
       Automerge.mark(doc, path, { start: 0, end: 3, expand: "none" }, "comment", "note-1");
       Automerge.mark(doc, path, { start: 0, end: 3, expand: "none" }, "bold", false);
@@ -88,7 +86,7 @@ describe("Chapter", () => {
   });
 
   describe("when two devices edit at once", () => {
-    const base = createChapter("c", [first]);
+    const base = createChapter([first]);
 
     function mergeEdits(phone: BlockSnapshot, laptop: BlockSnapshot): BlockSnapshot | undefined {
       const phoneCopy = editBlocks(Automerge.clone(base), [phone]);

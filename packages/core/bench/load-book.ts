@@ -47,11 +47,11 @@ function createSentence(wordCount: number): string {
   return `${chosen.join(" ")}.`;
 }
 
-function createEditedChapter(index: number): Chapter {
+function createEditedChapter(): Chapter {
   const blocks = Array.from({ length: PARAGRAPHS_PER_CHAPTER }, () =>
     createBlock(createSentence(75)),
   );
-  let chapter = createChapter(`Chapter ${String(index + 1)}`, blocks);
+  let chapter = createChapter(blocks);
   const order = blocks.map((block) => block.id);
   for (let round = 0; round < EDITS_PER_PARAGRAPH; round++) {
     const changed = blocks.map((block) => ({
@@ -71,7 +71,7 @@ function time<Result>(label: string, run: () => Result): Result {
 }
 
 const saved = time("build + save", () =>
-  Array.from({ length: CHAPTERS }, (_unused, index) => Automerge.save(createEditedChapter(index))),
+  Array.from({ length: CHAPTERS }, () => Automerge.save(createEditedChapter())),
 );
 const bytes = saved.reduce((total, binary) => total + binary.byteLength, 0);
 const chapters = time("cold load (all chapters)", () =>

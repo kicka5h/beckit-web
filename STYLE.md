@@ -182,10 +182,13 @@ We use well-supported, widely adopted libraries, and as few as we can.
 | React                                                                  | UI                                    |
 | TipTap (ProseMirror)                                                   | Rich-text editor                      |
 | Automerge                                                              | Local-first storage, sync and history |
+| automerge-repo, its IndexedDB storage adapter                          | Documents stored on the device        |
+| vite-plugin-pwa (Workbox)                                              | Service worker: the app opens offline |
 | ulid                                                                   | Sortable unique block ids             |
 | Fontsource (Literata, Figtree)                                         | Self-hosted fonts that work offline   |
 | Vite                                                                   | Dev server and build                  |
 | Vitest, happy-dom, @vitest/coverage-v8                                 | Tests and coverage                    |
+| Playwright                                                             | Offline tests in a real browser       |
 | ESLint, typescript-eslint, sonarjs, unicorn, jsdoc, simple-import-sort | Lint                                  |
 | Prettier                                                               | Formatting                            |
 | jscpd                                                                  | Duplicate-code detection              |

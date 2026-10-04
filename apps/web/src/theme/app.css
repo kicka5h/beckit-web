@@ -47,6 +47,34 @@ body {
   border: var(--status-dot-border) solid var(--warning-color);
 }
 
+.header__status--saved::before {
+  border-color: var(--accent-color);
+}
+
+.hint {
+  max-width: calc(var(--prose-measure) + 2 * var(--page-inset));
+  margin: var(--space-3) auto 0;
+  padding: var(--space-2) var(--space-3);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  border-radius: var(--corner-radius);
+  background: var(--raised-color);
+  color: var(--quiet-color);
+  font-size: var(--ui-size);
+}
+
+.hint__dismiss {
+  padding: var(--space-1) var(--space-2);
+  border: 0;
+  border-radius: var(--corner-radius);
+  background: transparent;
+  color: var(--accent-color);
+  font: inherit;
+  cursor: pointer;
+}
+
 .page {
   max-width: calc(var(--prose-measure) + 2 * var(--page-inset));
   margin: 0 auto;
