@@ -23,6 +23,12 @@ async function startProject(page: Page, format: string): Promise<void> {
     .click();
 }
 
+/** Adds to the body from its "+" menu: "Add chapter", "Add piece", "Add part". */
+async function addToBody(page: Page, label: string): Promise<void> {
+  await outline(page).getByRole("button", { name: "Add to Body" }).click();
+  await outline(page).getByRole("menuitem", { name: label }).click();
+}
+
 test.describe("project outline", () => {
   test("starts a chapter book with its front and back matter, and opens on chapter 1", async ({
     page,
@@ -42,7 +48,7 @@ test.describe("project outline", () => {
     await openOutline(page);
     await startProject(page, "Chapter book");
 
-    await outline(page).getByRole("button", { name: "Add chapter" }).click();
+    await addToBody(page, "Add chapter");
     await expect(headerTitle(page)).toHaveText("Chapter 2");
     await page.locator(".prose").click();
     await page.keyboard.type("The second chapter begins.");
@@ -57,7 +63,7 @@ test.describe("project outline", () => {
   test("renames and reorders pieces from the row menu", async ({ page }) => {
     await page.goto("/");
     await openOutline(page);
-    await outline(page).getByRole("button", { name: "Add piece" }).click();
+    await addToBody(page, "Add piece");
     await outline(page).getByRole("button", { name: "Actions for Piece 2" }).click();
     await outline(page).getByRole("menuitem", { name: "Move up" }).click();
     const body = outline(page).locator(".part").nth(1).locator(".row__title");

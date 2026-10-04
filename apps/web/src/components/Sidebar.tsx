@@ -68,9 +68,12 @@ export function Sidebar({ project, doc, onOpen, onClose }: SidebarProps): ReactE
             if (event.key === "Enter") event.currentTarget.blur();
           }}
         />
-        <button type="button" className="control" aria-label="Close" onClick={onClose}>
-          ×
-        </button>
+        <button
+          type="button"
+          className="control icon icon--close"
+          aria-label="Close"
+          onClick={onClose}
+        />
       </div>
       {PARTS.map((part) => (
         <PartList

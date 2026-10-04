@@ -6,6 +6,7 @@ import { useDoc } from "../hooks/use-doc.ts";
 import { useProjectTitles } from "../hooks/use-project-titles.ts";
 import { createProject } from "../project/create-project.ts";
 import type { OpenProject, OpenTarget } from "../project/open-project.ts";
+import { AddMenu } from "./AddMenu.tsx";
 import { NewProject } from "./NewProject.tsx";
 
 /** Props for `ProjectSwitcher`. */
@@ -39,10 +40,23 @@ export function ProjectSwitcher({ project, onOpen }: ProjectSwitcherProps): Reac
   }
   return (
     <section className="list">
-      {others.length > 0 && <h2 className="list__heading">Other projects</h2>}
+      <div className="list__header">
+        <h2 className="list__heading">{others.length > 0 ? "Other projects" : "Projects"}</h2>
+        <AddMenu
+          choices={[
+            {
+              label: "New project",
+              onAdd: () => {
+                setIsChoosing(true);
+              },
+            },
+          ]}
+          menuLabel="New project"
+        />
+      </div>
       <ul className="list__rows">
         {others.map((url) => (
-          <li key={url} className="row">
+          <li key={url} className="row row--project">
             <button
               type="button"
               className="row__title"
@@ -55,16 +69,6 @@ export function ProjectSwitcher({ project, onOpen }: ProjectSwitcherProps): Reac
           </li>
         ))}
       </ul>
-      <div className="list__actions">
-        <button
-          type="button"
-          onClick={() => {
-            setIsChoosing(true);
-          }}
-        >
-          New project
-        </button>
-      </div>
     </section>
   );
 }

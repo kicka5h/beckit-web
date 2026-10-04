@@ -49,13 +49,11 @@ export function RowLine({
       )}
       <button
         type="button"
-        className="control"
+        className="control icon icon--more"
         aria-label={`Actions for ${title}`}
         aria-expanded={isMenuOpen}
         onClick={onToggleMenu}
-      >
-        ⋯
-      </button>
+      />
     </>
   );
 }

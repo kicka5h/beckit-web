@@ -22,7 +22,7 @@ export function Header({ title, status, onTitleClick, children }: HeaderProps): 
   const statusClass = isSettled(status, sync) ? "header__status--saved" : "header__status--saving";
   return (
     <header className="header">
-      <button type="button" className="header__title" onClick={onTitleClick}>
+      <button type="button" className="header__title icon icon--sidebar" onClick={onTitleClick}>
         {title}
       </button>
       <div className="header__meta">
