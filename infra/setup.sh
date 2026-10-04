@@ -6,6 +6,9 @@
 #   ./infra/setup.sh                      # project 789571395800, region us-central1
 #   PROJECT=my-project REGION=europe-west1 BUDGET_AMOUNT=20USD ./infra/setup.sh
 #
+# Sign in with Apple is configured when these are set (see infra/README.md):
+#   APPLE_TEAM_ID, APPLE_SERVICES_ID, APPLE_KEY_ID, APPLE_KEY_FILE (the .p8 key)
+#
 # The Cloud Run sync service, backup job and its schedule are created by the deploy pipeline
 # once server/ exists (milestone 3); this script prepares everything they run on.
 set -euo pipefail
@@ -38,6 +41,8 @@ gcloud config set project "$PROJECT_ID" >/dev/null
 step() { printf '\n==> %s\n' "$1"; }
 
 exists() { "$@" >/dev/null 2>&1; }
+
+IDP_CONFIGS="https://identitytoolkit.googleapis.com/admin/v2/projects/${PROJECT_ID}/defaultSupportedIdpConfigs"
 
 google_api() {
   local method="$1" url="$2" body="${3:-}"
@@ -196,15 +201,48 @@ create_web_app() {
 check_google_sign_in() {
   step "Google sign-in"
   local config
-  config="$(google_api GET \
-    "https://identitytoolkit.googleapis.com/admin/v2/projects/${PROJECT_ID}/defaultSupportedIdpConfigs/google.com" \
-    2>/dev/null || true)"
+  config="$(google_api GET "${IDP_CONFIGS}/google.com" 2>/dev/null || true)"
   if [[ "$(jq -r '.enabled // false' <<<"${config:-null}")" == true ]]; then
     echo "Enabled."
   else
     echo "Not enabled. One-time switch, no API exists for it: Firebase console → Authentication →" \
       "Sign-in method → Google → Enable, then re-run this script." >&2
   fi
+}
+
+# The provider config holds the private key, so it is built by jq from the key file and sent on
+# stdin: it never appears on a command line, in the output or on disk.
+apple_config() {
+  jq -n --arg services "$APPLE_SERVICES_ID" --arg team "$APPLE_TEAM_ID" \
+    --arg key "$APPLE_KEY_ID" --rawfile private "$APPLE_KEY_FILE" \
+    '{enabled: true, clientId: $services,
+      appleSignInConfig: {codeFlowConfig: {teamId: $team, keyId: $key, privateKey: $private}}}'
+}
+
+send_apple_config() {
+  local method="$1" url="$2"
+  apple_config | curl -sS --fail-with-body -X "$method" "$url" \
+    -H "Authorization: Bearer $(gcloud auth print-access-token)" \
+    -H "x-goog-user-project: ${PROJECT_ID}" \
+    -H "Content-Type: application/json" \
+    --data-binary @- >/dev/null
+}
+
+configure_apple_sign_in() {
+  step "Apple sign-in"
+  if [[ -z "${APPLE_TEAM_ID:-}" || -z "${APPLE_SERVICES_ID:-}" || -z "${APPLE_KEY_ID:-}" ||
+    ! -r "${APPLE_KEY_FILE:-}" ]]; then
+    echo "Skipped: set APPLE_TEAM_ID, APPLE_SERVICES_ID, APPLE_KEY_ID and APPLE_KEY_FILE" \
+      "(see infra/README.md)." >&2
+    return
+  fi
+  if exists google_api GET "${IDP_CONFIGS}/apple.com"; then
+    send_apple_config PATCH "${IDP_CONFIGS}/apple.com?updateMask=enabled,clientId,appleSignInConfig"
+  else
+    send_apple_config POST "${IDP_CONFIGS}?idpId=apple.com"
+  fi
+  echo "Enabled. Apple's Services ID must list https://${PROJECT_ID}.firebaseapp.com/__/auth/handler" \
+    "as a return URL."
 }
 
 create_backup_repo() {
@@ -302,5 +340,6 @@ create_backup_key
 remove_legacy_backup_secret
 create_budget
 set_github_secrets
+configure_apple_sign_in
 check_google_sign_in
 printf '\nDone.\n'
