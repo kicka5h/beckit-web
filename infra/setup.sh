@@ -119,7 +119,9 @@ grant_runtime_roles() {
 grant_deploy_roles() {
   step "Deployer permissions"
   local role
-  for role in roles/run.admin roles/cloudscheduler.admin roles/firebasehosting.admin; do
+  # firebase-tools reads the project and its API keys before a Hosting deploy.
+  for role in roles/run.admin roles/cloudscheduler.admin roles/firebasehosting.admin \
+    roles/firebase.viewer roles/serviceusage.apiKeysViewer roles/serviceusage.serviceUsageConsumer; do
     gcloud projects add-iam-policy-binding "$PROJECT_ID" \
       --member="serviceAccount:${DEPLOY_SA}" --role="$role" --condition=None >/dev/null
   done

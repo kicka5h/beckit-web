@@ -15,6 +15,12 @@ pnpm bench    # 150k-word load benchmark
 
 Requires Node 22+ and pnpm 10.
 
+## Deploy
+
+Every merge to `main` that passes CI is built and published to Firebase Hosting at
+`https://<project-id>.web.app` by `.github/workflows/deploy.yml`, signed in through Workload
+Identity Federation (no stored keys). `infra/setup.sh` creates everything it needs.
+
 ## Status
 
 | Milestone                          | State   |
