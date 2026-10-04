@@ -93,3 +93,17 @@ jobs:
           npx --yes firebase-tools@15.32.1 deploy --only hosting
           --project "${{ secrets.GCP_PROJECT_ID }}" --non-interactive
           --message "${{ github.event.workflow_run.head_sha || github.sha }}"
+      # A build missing either setting hides sign-in, and nothing else fails, so check the app as
+      # served. Values are only matched, never printed.
+      - name: Check the live app can sign in and sync
+        env:
+          PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+          FIREBASE_CONFIG: ${{ secrets.FIREBASE_WEB_CONFIG }}
+        run: |
+          site="https://${PROJECT_ID}.web.app"
+          script="$(curl -fsS "${site}/" | grep -o '/assets/index-[^"]*\.js' | head -1)"
+          curl -fsS "${site}${script}" > live.js
+          grep -qF "$VITE_SYNC_URL" live.js || { echo "::error::The live app has no sync server address"; exit 1; }
+          api_key="$(jq -r '.apiKey // empty' <<< "$FIREBASE_CONFIG")"
+          test -n "$api_key" || { echo "::error::FIREBASE_WEB_CONFIG has no apiKey; re-run infra/setup.sh"; exit 1; }
+          grep -qF "$api_key" live.js || { echo "::error::The live app has no Firebase config"; exit 1; }
