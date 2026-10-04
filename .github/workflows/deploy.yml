@@ -49,14 +49,15 @@ jobs:
           ALLOWED_EMAILS: ${{ secrets.ALLOWED_EMAILS }}
         # One instance owns all document state (the design doc); sockets live up to Cloud Run's
         # hour, with affinity so a reconnect finds the same instance. The app checks sign-in
-        # itself, so the service accepts unauthenticated requests.
+        # itself, so the service accepts unauthenticated requests. The variables are separated by
+        # ";" (gcloud's ^;^ syntax), since emails hold "@" and the lists hold commas.
         run: |
           gcloud run deploy beckit-sync --quiet \
             --image "$IMAGE" --region "$REGION" \
             --service-account "beckit-sync@${PROJECT_ID}.iam.gserviceaccount.com" \
             --min-instances 0 --max-instances 1 --timeout 3600 --session-affinity \
             --allow-unauthenticated \
-            --set-env-vars "^@^BECKIT_BUCKET=${BUCKET}@GOOGLE_CLOUD_PROJECT=${PROJECT_ID}@ALLOWED_EMAILS=${ALLOWED_EMAILS}@ALLOWED_ORIGINS=https://${PROJECT_ID}.web.app,https://${PROJECT_ID}.firebaseapp.com"
+            --set-env-vars "^;^BECKIT_BUCKET=${BUCKET};GOOGLE_CLOUD_PROJECT=${PROJECT_ID};ALLOWED_EMAILS=${ALLOWED_EMAILS};ALLOWED_ORIGINS=https://${PROJECT_ID}.web.app,https://${PROJECT_ID}.firebaseapp.com"
           echo "url=$(gcloud run services describe beckit-sync --region "$REGION" --format 'value(status.url)')" >> "$GITHUB_OUTPUT"
 
   web:
