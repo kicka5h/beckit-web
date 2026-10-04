@@ -264,3 +264,14 @@ export function placeAfterStep(
       return isPart(parent) ? undefined : placeAfter(manuscript, parent);
   }
 }
+
+/**
+ * The pieces whose text a repeated-word count covers for `pieceId`: every piece of the section it
+ * is in, the whole body when the project has no sections at all, or else the piece alone.
+ */
+export function repeatScopeOf(manuscript: ManuscriptDoc, pieceId: NodeId): NodeId[] {
+  const section = sectionOf(manuscript, pieceId);
+  if (section) return piecesOf(manuscript, section).map(({ id }) => id);
+  const isFlat = !Object.values(manuscript.nodes).some(({ kind }) => kind === "section");
+  return isFlat ? piecesOf(manuscript, "body").map(({ id }) => id) : [pieceId];
+}

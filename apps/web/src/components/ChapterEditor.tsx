@@ -11,6 +11,8 @@ export interface ChapterEditorProps {
   /** Where to put the cursor on opening, as a document position; the end if unknown. */
   readonly initialCursor: number | undefined;
   readonly onCursorChange?: (position: number) => void;
+  /** Called with the highlighted text whenever the selection changes; "" when nothing is. */
+  readonly onSelectionChange?: (text: string) => void;
 }
 
 /** The writing surface for one chapter, reporting every change to its session. */
@@ -18,6 +20,7 @@ export function ChapterEditor({
   session,
   initialCursor,
   onCursorChange,
+  onSelectionChange,
 }: ChapterEditorProps): ReactElement {
   const editor = useEditor({
     extensions: [...extensions],
@@ -29,7 +32,9 @@ export function ChapterEditor({
       session.update(() => toSnapshots(doc));
     },
     onSelectionUpdate: ({ editor: current }) => {
-      onCursorChange?.(current.state.selection.head);
+      const { doc, selection } = current.state;
+      onCursorChange?.(selection.head);
+      onSelectionChange?.(doc.textBetween(selection.from, selection.to, "\n"));
     },
   });
 

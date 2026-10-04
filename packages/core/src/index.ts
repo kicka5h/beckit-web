@@ -57,11 +57,16 @@ export {
   placeAfterStep,
   removeNode,
   renameNode,
+  repeatScopeOf,
   sectionOf,
   writePieceWords,
 } from "./manuscript.ts";
 export type { Segment } from "./marks.ts";
 export { toSegments, toSpans } from "./marks.ts";
 export { memoize } from "./memoize.ts";
+export type { PassageStats, ReadingLevel } from "./readability.ts";
+export { measureBlocks, measureText, readingLevelOf } from "./readability.ts";
 export type { Span } from "./span.ts";
-export { countBlockWords, countWords } from "./text.ts";
+export { countBlockWords, countWords, wordsOf } from "./text.ts";
+export type { WordFormCount } from "./word-forms.ts";
+export { countWordForms } from "./word-forms.ts";

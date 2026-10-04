@@ -1,22 +1,21 @@
-import type { DocHandle } from "@automerge/automerge-repo";
-import { type ReactElement, useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import type { DocHandle, Repo } from "@automerge/automerge-repo";
+import { type ReactElement, useEffect, useState, useSyncExternalStore } from "react";
 
-import {
-  type ChapterDoc,
-  countBlockWords,
-  type ManuscriptDoc,
-  type NodeId,
-  writePieceWords,
-} from "@beckit/core";
+import { type ChapterDoc, type ManuscriptDoc, type NodeId, writePieceWords } from "@beckit/core";
 
 import { ChapterSession } from "../chapter/chapter-session.ts";
 import type { DeviceSettings } from "../device/device-settings.ts";
+import { useWritingStats } from "../hooks/use-writing-stats.ts";
 import { ChapterEditor } from "./ChapterEditor.tsx";
 import { Header } from "./Header.tsx";
+import { WritingStats } from "./WritingStats.tsx";
 
 /** Props for `PieceView`. */
 export interface PieceViewProps {
+  readonly repo: Repo;
   readonly manuscript: DocHandle<ManuscriptDoc>;
+  /** The manuscript's current contents, for the project count and repeated words. */
+  readonly doc: ManuscriptDoc;
   readonly pieceId: NodeId;
   readonly title: string;
   readonly chapter: DocHandle<ChapterDoc>;
@@ -27,7 +26,9 @@ export interface PieceViewProps {
 
 /** One piece open for writing under its header, saved to this device as the writer types. */
 export function PieceView({
+  repo,
   manuscript,
+  doc,
   pieceId,
   title,
   chapter,
@@ -38,7 +39,9 @@ export function PieceView({
   const [session] = useState(() => new ChapterSession(chapter, { flush }));
   const blocks = useSyncExternalStore(session.subscribe, () => session.blocks);
   const status = useSyncExternalStore(session.subscribe, () => session.status);
-  const wordCount = useMemo(() => countBlockWords(blocks), [blocks]);
+  const [selectedText, setSelectedText] = useState("");
+  const stats = useWritingStats({ repo, doc, pieceId, blocks, selectedText });
+  const wordCount = stats.pieceWords;
   const cursorKey = `cursor.${pieceId}`;
   const savedCursor = settings.read(cursorKey);
 
@@ -68,13 +71,16 @@ export function PieceView({
 
   return (
     <>
-      <Header title={title} wordCount={wordCount} status={status} onTitleClick={onTitleClick} />
+      <Header title={title} status={status} onTitleClick={onTitleClick}>
+        <WritingStats {...stats} />
+      </Header>
       <ChapterEditor
         session={session}
         initialCursor={savedCursor === undefined ? undefined : Number(savedCursor)}
         onCursorChange={(position) => {
           settings.write(cursorKey, String(position));
         }}
+        onSelectionChange={setSelectedText}
       />
     </>
   );

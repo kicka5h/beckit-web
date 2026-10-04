@@ -49,7 +49,9 @@ export function Workspace({ project, settings, onOpen }: WorkspaceProps): ReactE
         {chapter ? (
           <PieceView
             key={nodeId}
+            repo={repo}
             manuscript={manuscript}
+            doc={doc}
             pieceId={nodeId}
             title={title}
             chapter={chapter}
