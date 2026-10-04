@@ -1,0 +1,9 @@
+{
+  "path": ["packages", "apps"],
+  "ignore": ["**/node_modules/**", "**/dist/**"],
+  "format": ["typescript", "tsx", "css"],
+  "minTokens": 40,
+  "threshold": 0,
+  "reporters": ["console"],
+  "exitCode": 1
+}

@@ -1,0 +1,29 @@
+/* The single source of Beckit's look. Components read these variables; nothing hard-codes a color. */
+:root,
+[data-theme="dark"] {
+  --page: #1c1b19;
+  --panel: #22211e;
+  --raised: #2c2a27;
+  --line: #2f2d2a;
+  --ink: #e4dfd6;
+  --quiet: #8f897f;
+  --faint: #5f5a52;
+  --accent: #8fb5a8;
+  --warning: #c9a26b;
+
+  --font-prose: "Literata Variable", Georgia, serif;
+  --font-ui: "Figtree Variable", system-ui, sans-serif;
+  --prose-size: 19px;
+  --prose-leading: 1.7;
+  --measure: 68ch;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 16px;
+  --space-4: 24px;
+  --space-5: 56px;
+  --radius: 10px;
+  --header-height: 52px;
+
+  color-scheme: dark;
+}
