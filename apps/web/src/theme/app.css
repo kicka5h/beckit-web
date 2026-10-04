@@ -11,6 +11,17 @@ body {
   background: var(--page-color);
   color: var(--ink-color);
   font-family: var(--ui-font);
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Bars and floating notes sit on a translucent, blurred material, as on iOS. */
+.header,
+.hint,
+.marquee {
+  background: var(--material-color);
+  -webkit-backdrop-filter: var(--material-blur);
+  backdrop-filter: var(--material-blur);
 }
 
 .header {
@@ -23,13 +34,34 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: var(--space-3);
-  background: var(--page-color);
+  border-bottom: var(--hairline) solid var(--line-color);
   color: var(--quiet-color);
   font-size: var(--ui-size);
 }
 
+/* The page's title, which opens the outline: a sidebar button, as in iPad apps. */
+.header__title {
+  min-height: var(--tap-size);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--ink-color);
+  font-size: var(--row-size);
+  font-weight: var(--title-weight);
+}
+
+.header__title::before {
+  content: "";
+  flex: none;
+  width: var(--icon-size);
+  height: var(--icon-size);
+  background: var(--accent-color);
+  mask: var(--sidebar-icon) center / contain no-repeat;
+}
+
 .header__meta {
   display: flex;
+  font-size: var(--header-meta-size);
   flex-wrap: wrap;
   align-items: center;
   justify-content: flex-end;
@@ -65,20 +97,25 @@ body {
   left: var(--space-3);
   max-width: calc(var(--prose-measure) + 2 * var(--page-inset));
   margin: 0 auto;
-  padding: var(--space-2) var(--space-3);
+  padding: var(--space-3) var(--space-3) var(--space-3) var(--space-4);
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-3);
-  border-radius: var(--corner-radius);
-  background: var(--raised-color);
-  color: var(--quiet-color);
+  border-radius: var(--card-radius);
+  box-shadow: var(--card-shadow);
+  color: var(--ink-color);
   font-size: var(--ui-size);
 }
 
 /* A quiet, borderless button: menus, dismissals, small actions. */
 .control {
+  min-width: var(--tap-size);
+  min-height: var(--tap-size);
   padding: var(--space-1) var(--space-2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border-radius: var(--corner-radius);
   color: var(--quiet-color);
 }
@@ -100,8 +137,16 @@ body {
   background: var(--raised-color);
 }
 
+/* The note's one action: a filled pill, as iOS draws a prominent button. */
 .hint__action {
-  color: var(--accent-color);
+  flex: none;
+  min-height: auto;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--pill-radius);
+  background: var(--accent-color);
+  color: var(--on-accent-color);
+  font-weight: var(--title-weight);
+  white-space: nowrap;
 }
 
 .page {
@@ -171,9 +216,10 @@ button {
   width: min(var(--sidebar-width), 85vw);
   padding: var(--space-3);
   overflow-y: auto;
+  border-right: var(--hairline) solid var(--line-color);
   background: var(--panel-color);
   box-shadow: var(--overlay-shadow);
-  font-size: var(--ui-size);
+  font-size: var(--row-size);
 }
 
 .sidebar__top {
@@ -184,19 +230,24 @@ button {
 }
 
 .sidebar__project {
-  font-weight: var(--heading-weight);
+  font-size: var(--large-title-size);
+  font-weight: var(--bold-weight);
+}
+
+.sidebar__top .control {
+  font-size: var(--close-glyph-size);
 }
 
 .list {
-  margin-bottom: var(--space-3);
+  margin-bottom: var(--space-4);
 }
 
 .list__heading {
   margin: 0 0 var(--space-1);
   padding: var(--space-1) var(--space-2);
-  color: var(--faint-color);
-  font-size: inherit;
-  font-weight: inherit;
+  color: var(--ink-color);
+  font-size: var(--list-heading-size);
+  font-weight: var(--bold-weight);
 }
 
 .list__rows,
@@ -208,13 +259,14 @@ button {
 
 .list__actions {
   display: flex;
-  gap: var(--space-2);
-  padding: var(--space-1) var(--space-2);
+  gap: var(--space-4);
+  padding: 0 var(--space-2);
 }
 
 .list__actions button,
 .row-actions button,
 .new-project__cancel {
+  min-height: var(--tap-size);
   padding: var(--space-1) 0;
   color: var(--accent-color);
 }
@@ -225,8 +277,14 @@ button {
   border-radius: var(--corner-radius);
 }
 
+/* The open page, filled with the accent as iPad sidebars mark a selection. */
 .row--current .row__line {
-  background: var(--raised-color);
+  background: var(--accent-color);
+  color: var(--on-accent-color);
+}
+
+.row--current .control {
+  color: inherit;
 }
 
 .row--depth-1 .row__line {
@@ -244,6 +302,7 @@ button {
 .row__title {
   flex: 1;
   min-width: 0;
+  min-height: var(--tap-size);
   padding: var(--space-1) var(--space-2);
   overflow: hidden;
   text-align: left;
@@ -365,13 +424,17 @@ button {
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  background: var(--page-color);
-  color: var(--faint-color);
-  font-size: var(--ui-size);
+  border-top: var(--hairline) solid var(--line-color);
+  color: var(--quiet-color);
+  font-size: var(--caption-size);
 }
 
 .workspace--outline .marquee {
   left: var(--outline-push);
+}
+
+.workspace--outline .hint {
+  left: calc(var(--outline-push) + var(--space-3));
 }
 
 .marquee__fact {
@@ -386,7 +449,8 @@ button {
 }
 
 .marquee__source {
-  color: var(--quiet-color);
+  color: var(--accent-color);
+  text-decoration: none;
 }
 
 @keyframes marquee-in {
