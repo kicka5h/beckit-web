@@ -9,17 +9,17 @@ import { HomeScreenHint } from "./HomeScreenHint.tsx";
 import { PieceView } from "./PieceView.tsx";
 import { Sidebar } from "./Sidebar.tsx";
 
-/** Whether the outline covers the page rather than sitting beside it, as on a phone. */
-function isOutlineOverlaying(): boolean {
-  const value = getComputedStyle(document.documentElement).getPropertyValue("--outline-overlays");
-  return value.trim() === "1";
-}
-
 /** Props for `Workspace`. */
 export interface WorkspaceProps {
   readonly project: OpenProject;
   readonly settings: DeviceSettings;
   readonly onOpen: (target: OpenTarget) => void;
+}
+
+/** Whether the outline covers the page rather than sitting beside it, as on a phone. */
+function isOutlineOverlaying(): boolean {
+  const value = getComputedStyle(document.documentElement).getPropertyValue("--outline-overlays");
+  return value.trim() === "1";
 }
 
 /** The open page with the project outline beside it, opened from the title in the header. */

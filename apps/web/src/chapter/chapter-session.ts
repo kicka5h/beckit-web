@@ -11,7 +11,7 @@ import {
 /** A function that reads the editor's current blocks, called once per save rather than per keystroke. */
 type ReadBlocks = () => readonly BlockSnapshot[];
 
-/** Whether the latest edit is safely stored on this device. */
+/** How far the latest edit has got toward this device's storage. */
 export type SaveStatus = "saving" | "saved" | "failed";
 
 /** Options for `ChapterSession`. */
@@ -54,7 +54,7 @@ export class ChapterSession {
     return this.#written;
   }
 
-  /** Whether the latest edit is stored on this device yet. */
+  /** How far the latest edit has got toward this device's storage. */
   get status(): SaveStatus {
     return this.#status;
   }

@@ -21,8 +21,8 @@ export interface Format {
   readonly unit: string;
   /** What a group of body pieces is called: "Part", "Section". */
   readonly group: string;
-  /** The title of the empty piece a new project opens on. */
-  readonly firstTitle: string;
+  /** The title of the empty piece a new project opens on; the first unit ("Chapter 1") if unset. */
+  readonly firstTitle?: string;
   readonly front: readonly FormatPage[];
   readonly back: readonly FormatPage[];
 }
@@ -54,13 +54,16 @@ const CREDITS: FormatPage = {
 const ACKNOWLEDGMENTS: FormatPage = { title: "Acknowledgments", text: ["Thank you to …"] };
 const ABOUT: FormatPage = { title: "About the author", text: ["Author lives in …"] };
 
+/** The title of anything not yet named: a new project, or a blank project's first page. */
+export const UNTITLED = "Untitled";
+
 /** Whatever the writer builds: no front or back matter, and a first page with no name yet. */
-const BLANK: Format = {
+export const BLANK_FORMAT: Format = {
   id: "blank",
   name: "Blank",
   unit: "Piece",
   group: "Section",
-  firstTitle: "Untitled",
+  firstTitle: UNTITLED,
   front: [],
   back: [],
 };
@@ -72,7 +75,6 @@ export const FORMATS: readonly Format[] = [
     name: "Chapter book",
     unit: "Chapter",
     group: "Part",
-    firstTitle: "Chapter 1",
     front: [
       { title: "Half title", text: ["Title"] },
       TITLE_PAGE,
@@ -88,7 +90,6 @@ export const FORMATS: readonly Format[] = [
     name: "Essay collection",
     unit: "Essay",
     group: "Section",
-    firstTitle: "Essay 1",
     front: [
       TITLE_PAGE,
       COPYRIGHT,
@@ -103,7 +104,6 @@ export const FORMATS: readonly Format[] = [
     name: "Poetry collection",
     unit: "Poem",
     group: "Section",
-    firstTitle: "Poem 1",
     front: [TITLE_PAGE, COPYRIGHT, DEDICATION, EPIGRAPH, CONTENTS],
     back: [NOTES, CREDITS, ACKNOWLEDGMENTS, ABOUT],
   },
@@ -112,7 +112,6 @@ export const FORMATS: readonly Format[] = [
     name: "Biography or memoir",
     unit: "Chapter",
     group: "Part",
-    firstTitle: "Chapter 1",
     front: [
       TITLE_PAGE,
       COPYRIGHT,
@@ -130,12 +129,27 @@ export const FORMATS: readonly Format[] = [
       ABOUT,
     ],
   },
-  BLANK,
+  BLANK_FORMAT,
 ];
 
 /** The format with `id`, or Blank if there is none: a project whose format is unknown is still a project. */
 export function formatOf(id: string): Format {
-  return FORMATS.find((format) => format.id === id) ?? BLANK;
+  return FORMATS.find((format) => format.id === id) ?? BLANK_FORMAT;
+}
+
+/** The title of the body's piece number `number` in this format: "Chapter 3", "Poem 12". */
+export function pieceTitleOf({ unit }: Format, number: number): string {
+  return `${unit} ${String(number)}`;
+}
+
+/** The title of the body's group number `number` in this format: "Part 2", "Section 4". */
+export function groupTitleOf({ group }: Format, number: number): string {
+  return `${group} ${String(number)}`;
+}
+
+/** The title of the empty piece a new project in this format opens on. */
+export function firstTitleOf(format: Format): string {
+  return format.firstTitle ?? pieceTitleOf(format, 1);
 }
 
 function toPlannedPage(part: Part, { title, text, isContents = false }: FormatPage): PlannedPage {
@@ -149,7 +163,7 @@ function toPlannedPage(part: Part, { title, text, isContents = false }: FormatPa
 export function planProject(format: Format): PlannedPage[] {
   return [
     ...format.front.map((page) => toPlannedPage("front", page)),
-    { part: "body", title: format.firstTitle, blocks: [], isContents: false },
+    { part: "body", title: firstTitleOf(format), blocks: [], isContents: false },
     ...format.back.map((page) => toPlannedPage("back", page)),
   ];
 }

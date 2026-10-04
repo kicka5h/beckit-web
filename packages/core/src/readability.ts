@@ -2,7 +2,7 @@ import type { BlockSnapshot } from "./block.ts";
 import familiarWordList from "./familiar-words.json" with { type: "json" };
 import { memoize } from "./memoize.ts";
 import { wordsOf } from "./text.ts";
-import { normalizeWord } from "./word-forms.ts";
+import { familyOf, normalizeWord } from "./word-forms.ts";
 
 /** What the Dale–Chall formula reads from a passage. */
 export interface PassageStats {
@@ -23,6 +23,9 @@ export interface ReadingLevel {
  * package by Titus Wormer. See THIRD_PARTY_NOTICES.md.
  */
 const FAMILIAR_WORDS: ReadonlySet<string> = new Set(familiarWordList);
+
+/** The family of every familiar word, so a regular form of one (looked, boxes) counts as familiar. */
+const FAMILIAR_FAMILIES: ReadonlySet<string> = new Set(familiarWordList.map(familyOf));
 
 /** Score ceilings and the level each maps to, from the Dale–Chall readability formula. */
 const LEVELS = [
@@ -50,30 +53,15 @@ const OPENERS: ReadonlySet<string> = new Set(['"', "'", "“", "‘", "(", "["])
 const CAPITAL = /^\p{Lu}$/u;
 const SPACE = /^\s$/;
 const DIGIT = /\p{N}/u;
-const Y_PLURAL_OR_PAST = /ie[sd]$/;
-/** Regular endings a familiar word may carry and stay familiar. */
-const INFLECTION_SUFFIXES = ["s", "es", "d", "ed", "ing", "r", "er", "st", "est"] as const;
 const EMPTY_STATS: PassageStats = { words: 0, difficultWords: 0, sentences: 0 };
-
-/** The bases a regular inflection of a familiar word could come from: -s, -es, -ed, -ing, -er, -est. */
-function basesOf(word: string): string[] {
-  const bases = [word];
-  for (const suffix of INFLECTION_SUFFIXES) {
-    if (!word.endsWith(suffix)) continue;
-    const stem = word.slice(0, -suffix.length);
-    bases.push(stem, `${stem}e`, stem.slice(0, -1));
-  }
-  if (Y_PLURAL_OR_PAST.test(word)) bases.push(`${word.slice(0, -3)}y`);
-  return bases;
-}
 
 /** Whether a word counts as familiar: on the list, a regular form of a word on it, or a number. */
 function isFamiliar(word: string): boolean {
   if (DIGIT.test(word)) return true;
-  return basesOf(normalizeWord(word)).some((base) => FAMILIAR_WORDS.has(base));
+  return FAMILIAR_WORDS.has(normalizeWord(word)) || FAMILIAR_FAMILIES.has(familyOf(word));
 }
 
-/** The index of the first character from `index` on that `isSkipped` rejects. */
+/** Skips from `index` past every character `isSkipped` accepts; returns where it stopped. */
 function skipFrom(text: string, index: number, isSkipped: (char: string) => boolean): number {
   let position = index;
   while (position < text.length && isSkipped(text.charAt(position))) position++;
@@ -102,7 +90,7 @@ function countSentences(line: string): number {
 
 function measureLine(line: string): PassageStats {
   const words = wordsOf(line);
-  if (words.length === 0) return { words: 0, difficultWords: 0, sentences: 0 };
+  if (words.length === 0) return EMPTY_STATS;
   return {
     words: words.length,
     difficultWords: words.filter((word) => !isFamiliar(word)).length,
@@ -132,7 +120,7 @@ export function measureBlocks(blocks: readonly BlockSnapshot[]): PassageStats {
 }
 
 /**
- * Estimates a passage's reading level with the Dale–Chall formula, as WordCounter does: the share
+ * The Dale–Chall reading level of a passage, estimated as WordCounter does: from the share
  * of difficult words and the average sentence length. English only. Undefined below two sentences.
  */
 export function readingLevelOf({

@@ -10,6 +10,9 @@ import * as Automerge from '@automerge/automerge';
 export function applyEdit(chapter: Chapter, edit: ChapterEdit): Chapter;
 
 // @public
+export const BLANK_FORMAT: Format;
+
+// @public
 export const BLOCK_TYPES: readonly ["paragraph", "heading", "sceneBreak"];
 
 // @public
@@ -77,16 +80,10 @@ export interface ContentsNode {
 }
 
 // @public
-export function countBlockWords(blocks: readonly BlockSnapshot[]): number;
-
-// @public
 export function countProjectWords(manuscript: ManuscriptDoc): number;
 
 // @public
 export function countWordForms(texts: readonly string[], word: string): WordFormCount[];
-
-// @public
-export function countWords(text: string): number;
 
 // @public
 export function createBlock(text: string, options?: CreateBlockOptions): BlockSnapshot;
@@ -105,10 +102,16 @@ export interface CreateBlockOptions {
 export function createChapter(blocks: readonly BlockSnapshot[]): Chapter;
 
 // @public
+export function createChapterDoc(): ChapterDoc;
+
+// @public
 export function createManuscriptDoc(title: string, format: string): ManuscriptDoc;
 
 // @public
 export function createNodeId(): NodeId;
+
+// @public
+export function createPieceNode(title: string, chapterUrl: string): PieceNode;
 
 // @public
 export interface CurrentBlock extends Span {
@@ -120,13 +123,19 @@ export interface CurrentBlock extends Span {
 export function diffEdit(previous: readonly BlockSnapshot[], next: readonly BlockSnapshot[]): ChapterEdit | undefined;
 
 // @public
+export function endPlaceOf(manuscript: ManuscriptDoc, parent: Parent): Place;
+
+// @public
 export function findPlace(manuscript: ManuscriptDoc, id: NodeId): Place | undefined;
+
+// @public
+export function firstTitleOf(format: Format): string;
 
 // @public
 export interface Format {
     // (undocumented)
     readonly back: readonly FormatPage[];
-    readonly firstTitle: string;
+    readonly firstTitle?: string;
     // (undocumented)
     readonly front: readonly FormatPage[];
     readonly group: string;
@@ -151,6 +160,9 @@ export interface FormatPage {
 
 // @public
 export const FORMATS: readonly Format[];
+
+// @public
+export function groupTitleOf(input: Format, number: number): string;
 
 // @public
 export const HEADING_LEVELS: readonly [1, 2, 3];
@@ -273,15 +285,15 @@ export interface PieceNode {
 export function piecesOf(manuscript: ManuscriptDoc, parent: Parent): PieceEntry[];
 
 // @public
+export function pieceTitleOf(input: Format, number: number): string;
+
+// @public
 export interface Place {
     // (undocumented)
     readonly index: number;
     // (undocumented)
     readonly parent: Parent;
 }
-
-// @public
-export function placeAfterStep(manuscript: ManuscriptDoc, id: NodeId, step: TreeStep): Place | undefined;
 
 // @public
 export interface PlannedPage {
@@ -360,6 +372,9 @@ export interface Span {
 }
 
 // @public
+export function stepPlaceOf(manuscript: ManuscriptDoc, id: NodeId, step: TreeStep): Place | undefined;
+
+// @public
 export interface StoredBlock {
     // (undocumented)
     level?: number;
@@ -368,6 +383,9 @@ export interface StoredBlock {
     // (undocumented)
     type: BlockType;
 }
+
+// @public
+export function toInitialEdit(blocks: readonly BlockSnapshot[]): ChapterEdit;
 
 // @public
 export function toSegments(text: string, spans: readonly MarkSpan[]): Segment[];
@@ -379,7 +397,13 @@ export function toSnapshot(input: BlockFields): BlockSnapshot;
 export function toSpans(segments: readonly Segment[]): MarkSpan[];
 
 // @public
-export type TreeStep = "up" | "down" | "in" | "out";
+export const TREE_STEPS: readonly ["up", "down", "in", "out"];
+
+// @public
+export type TreeStep = (typeof TREE_STEPS)[number];
+
+// @public
+export const UNTITLED = "Untitled";
 
 // @public
 export interface WordFormCount {

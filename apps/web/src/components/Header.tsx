@@ -5,7 +5,8 @@ import type { SaveStatus } from "../chapter/chapter-session.ts";
 /** Props for `Header`. */
 export interface HeaderProps {
   readonly title: string;
-  readonly status: SaveStatus;
+  /** How far the open piece's latest edit has got; none for a page with no text of its own. */
+  readonly status?: SaveStatus;
   readonly onTitleClick: () => void;
   /** Counts shown before the save status; none for a page with no text of its own. */
   readonly children?: ReactNode;
@@ -27,9 +28,11 @@ export function Header({ title, status, onTitleClick, children }: HeaderProps): 
       </button>
       <div className="header__meta">
         {children}
-        <span className={`header__status header__status--${status}`} role="status">
-          {STATUS_LABELS[status]}
-        </span>
+        {status && (
+          <span className={`header__status header__status--${status}`} role="status">
+            {STATUS_LABELS[status]}
+          </span>
+        )}
       </div>
     </header>
   );

@@ -1,7 +1,7 @@
 import { type DocHandle, generateAutomergeUrl, type Repo } from "@automerge/automerge-repo";
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { type ChapterDoc, createNodeId, insertNode, piecesOf } from "@beckit/core";
+import { type ChapterDoc, createNodeId, createPieceNode, insertNode, piecesOf } from "@beckit/core";
 
 import type { DeviceSettings } from "../device/device-settings.ts";
 import { openProject, rememberTarget } from "./open-project.ts";
@@ -70,7 +70,7 @@ describe("openProject", () => {
       insertNode(
         doc,
         { parent: "front", index: 0 },
-        { kind: "piece", title: "Dedication", chapterUrl: chapterOf(first.chapter).url, words: 0 },
+        createPieceNode("Dedication", chapterOf(first.chapter).url),
         dedication,
       );
     });

@@ -1,5 +1,5 @@
 import type { Repo } from "@automerge/automerge-repo";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 
 import {
   type BlockSnapshot,
@@ -12,6 +12,9 @@ import {
 } from "@beckit/core";
 
 import { findStored } from "../project/documents.ts";
+import { useLoaded } from "./use-loaded.ts";
+
+const NO_TEXTS: readonly string[] = [];
 
 /** Reads the text of every piece in `ids` from this device, one string per block. */
 async function readPieces(
@@ -40,24 +43,13 @@ export function useScopeTexts(
   pieceId: NodeId,
   blocks: readonly BlockSnapshot[],
 ): readonly string[] {
-  const [otherTexts, setOtherTexts] = useState<readonly string[]>([]);
-  // Joined so the effect reruns only when the scope itself changes, not on every edit.
-  const others = repeatScopeOf(doc, pieceId)
-    .filter((id) => id !== pieceId)
-    .join(" ");
-
-  useEffect(() => {
-    let isCurrent = true;
-    const ids = others ? others.split(" ").filter(isNodeId) : [];
-    void readPieces(repo, doc, ids).then((texts) => {
-      if (isCurrent) setOtherTexts(texts);
-    });
-    return () => {
-      isCurrent = false;
-    };
-    // `doc` is read once per scope: other pieces don't change while this one is open.
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- see above
-  }, [repo, others]);
+  const others = repeatScopeOf(doc, pieceId).filter((id) => id !== pieceId);
+  // Other pieces don't change while this one is open, so they load once per scope, not per edit.
+  const otherTexts = useLoaded(
+    others,
+    (ids) => readPieces(repo, doc, ids.filter(isNodeId)),
+    NO_TEXTS,
+  );
 
   return useMemo(() => [...blocks.map(({ text }) => text), ...otherTexts], [blocks, otherTexts]);
 }

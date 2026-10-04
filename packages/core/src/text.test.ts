@@ -1,9 +1,8 @@
 import { describe, expect, it } from "vitest";
 
-import { createBlock } from "./block.ts";
-import { countBlockWords, countWords } from "./text.ts";
+import { wordsOf } from "./text.ts";
 
-describe("countWords", () => {
+describe("wordsOf", () => {
   const cases: [string, number][] = [
     ["", 0],
     ["  ", 0],
@@ -13,13 +12,7 @@ describe("countWords", () => {
     ["1999 was early", 3],
   ];
 
-  it.each(cases)("counts %j as %i words", (text, wordCount) => {
-    expect(countWords(text)).toBe(wordCount);
-  });
-});
-
-describe("countBlockWords", () => {
-  it("sums the words in every block", () => {
-    expect(countBlockWords([createBlock("one two"), createBlock("three")])).toBe(3);
+  it.each(cases)("finds the words of %j", (text, wordCount) => {
+    expect(wordsOf(text)).toHaveLength(wordCount);
   });
 });

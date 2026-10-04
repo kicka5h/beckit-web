@@ -1,7 +1,7 @@
 import type { ReactElement } from "react";
 
 import {
-  childIdsOf,
+  endPlaceOf,
   findPlace,
   formatOf,
   type ManuscriptDoc,
@@ -28,10 +28,8 @@ export interface SidebarProps {
 
 /** Where a row dropped on `target` lands: inside a section, before a page, at the end of a part. */
 function dropPlaceOf(doc: ManuscriptDoc, target: OutlineEntry | Part): Place | undefined {
-  if (typeof target === "string") return { parent: target, index: doc[target].length };
-  if (target.node.kind === "section") {
-    return { parent: target.id, index: childIdsOf(doc, target.id).length };
-  }
+  if (typeof target === "string") return endPlaceOf(doc, target);
+  if (target.node.kind === "section") return endPlaceOf(doc, target.id);
   return findPlace(doc, target.id);
 }
 

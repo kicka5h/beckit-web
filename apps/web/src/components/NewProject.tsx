@@ -8,7 +8,8 @@ export interface NewProjectProps {
   readonly onCancel: () => void;
 }
 
-function describe({ front, back, unit }: Format): string {
+/** The one-line summary of a format: its units and the pages it pre-makes. */
+function summaryOf({ front, back, unit }: Format): string {
   const pages = [...front, ...back].map(({ title }) => title.toLowerCase());
   return pages.length > 0
     ? `${unit}s, with ${pages.join(", ")}`
@@ -31,7 +32,7 @@ export function NewProject({ onChoose, onCancel }: NewProjectProps): ReactElemen
               }}
             >
               <span className="new-project__name">{format.name}</span>
-              <span className="new-project__pages">{describe(format)}</span>
+              <span className="new-project__pages">{summaryOf(format)}</span>
             </button>
           </li>
         ))}

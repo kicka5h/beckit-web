@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { type ChapterDoc, createBlock, readChapter } from "@beckit/core";
 
-import { createChapterDoc } from "../project/documents.ts";
+import { storeChapter } from "../project/documents.ts";
 import { createTestRepo } from "../project/test-project.ts";
 import { ChapterSession, type ChapterSessionOptions } from "./chapter-session.ts";
 
@@ -13,7 +13,7 @@ describe("ChapterSession", () => {
   let handle: DocHandle<ChapterDoc>;
 
   function createSession(options: ChapterSessionOptions = {}): ChapterSession {
-    handle = createChapterDoc(createTestRepo(), [first]);
+    handle = storeChapter(createTestRepo(), [first]);
     return new ChapterSession(handle, options);
   }
 

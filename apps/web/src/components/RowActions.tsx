@@ -2,15 +2,16 @@ import type { DocHandle } from "@automerge/automerge-repo";
 import type { ReactElement } from "react";
 
 import {
+  endPlaceOf,
   type ManuscriptDoc,
   type OutlineEntry,
-  type Part,
   PARTS,
-  placeAfterStep,
-  type TreeStep,
+  stepPlaceOf,
+  TREE_STEPS,
 } from "@beckit/core";
 
 import { moveByStep, moveTo, remove } from "../project/tree-actions.ts";
+import { PART_LABELS, STEP_LABELS } from "./outline-labels.ts";
 
 /** Props for `RowActions`. */
 export interface RowActionsProps {
@@ -20,23 +21,6 @@ export interface RowActionsProps {
   readonly onDone: () => void;
   readonly onRename: () => void;
 }
-
-/** What each part is called in the outline. */
-export const PART_LABELS = {
-  front: "Front matter",
-  body: "Body",
-  back: "Back matter",
-} as const satisfies Record<Part, string>;
-
-/** The label of each one-step move. */
-const STEP_LABELS = {
-  up: "Move up",
-  down: "Move down",
-  in: "Into the section above",
-  out: "Out of its section",
-} as const satisfies Record<TreeStep, string>;
-
-const STEPS: readonly TreeStep[] = ["up", "down", "in", "out"];
 
 /** Whether removing a node loses visible work, so the writer should confirm first. */
 function shouldConfirmRemoval({ node }: OutlineEntry): boolean {
@@ -52,29 +36,29 @@ export function RowActions({ manuscript, entry, onDone, onRename }: RowActionsPr
   const { id, part, node } = entry;
   const doc = manuscript.doc();
 
-  function run(action: () => void): () => void {
+  function thenClose(action: () => void): () => void {
     return () => {
       action();
       onDone();
     };
   }
 
-  function confirmRemoval(): void {
+  function removeAfterConfirming(): void {
     const message = `Remove “${node.title}”? Its text stays on this device.`;
     if (!shouldConfirmRemoval(entry) || window.confirm(message)) remove(manuscript, id);
   }
 
   return (
     <div className="row-actions" role="menu">
-      <button type="button" role="menuitem" onClick={run(onRename)}>
+      <button type="button" role="menuitem" onClick={thenClose(onRename)}>
         Rename
       </button>
-      {STEPS.filter((step) => placeAfterStep(doc, id, step)).map((step) => (
+      {TREE_STEPS.filter((step) => stepPlaceOf(doc, id, step)).map((step) => (
         <button
           key={step}
           type="button"
           role="menuitem"
-          onClick={run(() => {
+          onClick={thenClose(() => {
             moveByStep(manuscript, id, step);
           })}
         >
@@ -86,8 +70,8 @@ export function RowActions({ manuscript, entry, onDone, onRename }: RowActionsPr
           key={other}
           type="button"
           role="menuitem"
-          onClick={run(() => {
-            moveTo(manuscript, id, { parent: other, index: doc[other].length });
+          onClick={thenClose(() => {
+            moveTo(manuscript, id, endPlaceOf(doc, other));
           })}
         >
           To {PART_LABELS[other].toLowerCase()}
@@ -97,7 +81,7 @@ export function RowActions({ manuscript, entry, onDone, onRename }: RowActionsPr
         type="button"
         role="menuitem"
         className="row-actions__remove"
-        onClick={run(confirmRemoval)}
+        onClick={thenClose(removeAfterConfirming)}
       >
         Remove
       </button>
