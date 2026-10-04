@@ -10,10 +10,13 @@ export interface Account {
  * saves with no account at all, and only sync needs one.
  */
 export interface AccountService {
+  /** How people sign in: with Google, or with a self-hosted server's passphrase. */
+  readonly signInMethod: "google" | "passphrase";
   /** The signed-in account, or undefined when nobody is signed in (or not yet known). */
   readonly current: () => Account | undefined;
   /** Registers a listener for sign-in, sign-out and token renewal; returns its remover. */
   readonly subscribe: (listener: () => void) => () => void;
-  readonly signIn: () => Promise<void>;
+  /** Signs in; a passphrase server needs the passphrase, and rejects a wrong one. */
+  readonly signIn: (passphrase?: string) => Promise<void>;
   readonly signOut: () => Promise<void>;
 }

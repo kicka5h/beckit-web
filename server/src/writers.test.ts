@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { toAllowedEmails } from "./writers.ts";
+import { createPassphraseVerifier, toAllowedEmails } from "./writers.ts";
 
 describe("toAllowedEmails", () => {
   it("reads a comma-separated list, ignoring case, spaces and blanks", () => {
@@ -8,5 +8,14 @@ describe("toAllowedEmails", () => {
       "ash@example.com",
       "b@example.com",
     ]);
+  });
+});
+
+describe("createPassphraseVerifier", () => {
+  it("lets in the passphrase and nothing else", async () => {
+    const verify = createPassphraseVerifier("correct horse battery staple");
+    expect(await verify("correct horse battery staple")).toMatchObject({ uid: "self" });
+    expect(await verify("correct horse")).toBeUndefined();
+    expect(await verify("")).toBeUndefined();
   });
 });

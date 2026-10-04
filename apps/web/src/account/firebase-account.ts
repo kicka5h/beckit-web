@@ -43,6 +43,7 @@ export function createFirebaseAccounts(config: FirebaseConfig): AccountService {
   });
 
   return {
+    signInMethod: "google",
     current: () => account,
     subscribe: listeners.subscribe,
     signIn: () => signInWithRedirect(auth, new GoogleAuthProvider()),

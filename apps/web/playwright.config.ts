@@ -51,7 +51,7 @@ export default defineConfig({
       reuseExistingServer: !process.env.CI,
       env: {
         PORT: String(SYNC_SERVER_PORT),
-        DEV_TOKEN,
+        SYNC_PASSPHRASE: DEV_TOKEN,
         ALLOWED_ORIGINS: `http://localhost:${String(SYNC_APP_PORT)}`,
       },
     },

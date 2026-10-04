@@ -2,6 +2,7 @@ import { type ReactElement, useSyncExternalStore } from "react";
 
 import type { AccountService } from "../account/account.ts";
 import type { SyncClient } from "../sync/sync-client.ts";
+import { PassphraseForm } from "./PassphraseForm.tsx";
 
 /** Props for `AccountPanel`. */
 export interface AccountPanelProps {
@@ -21,16 +22,20 @@ export function AccountPanel({ accounts, sync }: AccountPanelProps): ReactElemen
     return (
       <section className="list account">
         <h2 className="list__heading">Sync</h2>
-        <div className="list__actions">
-          <button
-            type="button"
-            onClick={() => {
-              void accounts.signIn();
-            }}
-          >
-            Sign in with Google to sync
-          </button>
-        </div>
+        {accounts.signInMethod === "passphrase" ? (
+          <PassphraseForm accounts={accounts} />
+        ) : (
+          <div className="list__actions">
+            <button
+              type="button"
+              onClick={() => {
+                void accounts.signIn();
+              }}
+            >
+              Sign in with Google to sync
+            </button>
+          </div>
+        )}
       </section>
     );
   }

@@ -12,6 +12,7 @@ export function createFixedAccounts(email: string, token: string): AccountServic
   const listeners = createListeners();
 
   return {
+    signInMethod: "passphrase",
     current: () => (isSignedIn ? account : undefined),
     subscribe: listeners.subscribe,
     signIn: () => {
