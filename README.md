@@ -8,7 +8,8 @@ version of every paragraph.
 ```sh
 pnpm install
 pnpm dev      # http://localhost:5173
-pnpm check    # everything CI runs
+pnpm check    # format, types, lint, duplicates, unit tests, API report, build
+pnpm e2e      # offline tests in Chromium (Playwright)
 pnpm bench    # 150k-word load benchmark
 ```
 
@@ -19,7 +20,7 @@ Requires Node 22+ and pnpm 10.
 | Milestone                          | State   |
 | ---------------------------------- | ------- |
 | 1. Editor + permanent block ids    | Done    |
-| 2. Offline writer (PWA, IndexedDB) | Next    |
+| 2. Offline writer (PWA, IndexedDB) | Started |
 | 3. Sync (Cloud Run, Cloud Storage) | Planned |
 | 4. History core                    | Planned |
 | 5. Review & revert                 | Planned |

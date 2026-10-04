@@ -20,7 +20,10 @@ Design doc: https://claude.ai/code/artifact/ca3d1c43-425c-43b9-8cf2-044eeae20617
 
 ## Map
 
-- `packages/core` — pure domain logic: block ids, marks, chapter storage (Automerge), diffing.
+- `packages/core` — pure domain logic: block ids, marks, chapter and manuscript docs (Automerge), diffing.
 - `apps/web/src/editor` — TipTap setup, block-id plugin, editor ↔ snapshot conversion.
 - `apps/web/src/chapter` — the open chapter's session (batching edits into Automerge).
+- `apps/web/src/project` — opening the project and piece this device had open.
+- `apps/web/src/device` — device storage (automerge-repo on IndexedDB), local settings, platform checks.
+- `apps/web/e2e` — Playwright tests of the built app, offline included (`pnpm e2e`).
 - `apps/web/src/theme` — design tokens (`tokens.css`) and global styles.

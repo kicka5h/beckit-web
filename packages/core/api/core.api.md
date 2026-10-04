@@ -51,7 +51,6 @@ export type Chapter = Automerge.Doc<ChapterDoc>;
 
 // @public
 export type ChapterDoc = {
-    title: string;
     order: BlockId[];
     blocks: Record<BlockId, StoredBlock>;
 };
@@ -67,7 +66,21 @@ export interface ChapterEdit {
 }
 
 // @public
+export function childIdsOf(manuscript: ManuscriptDoc, parent: Parent): NodeId[];
+
+// @public
+export interface ContentsNode {
+    // (undocumented)
+    kind: "contents";
+    // (undocumented)
+    title: string;
+}
+
+// @public
 export function countBlockWords(blocks: readonly BlockSnapshot[]): number;
+
+// @public
+export function countProjectWords(manuscript: ManuscriptDoc): number;
 
 // @public
 export function countWords(text: string): number;
@@ -86,7 +99,13 @@ export interface CreateBlockOptions {
 }
 
 // @public
-export function createChapter(title: string, blocks: readonly BlockSnapshot[]): Chapter;
+export function createChapter(blocks: readonly BlockSnapshot[]): Chapter;
+
+// @public
+export function createManuscriptDoc(title: string, format: string): ManuscriptDoc;
+
+// @public
+export function createNodeId(): NodeId;
 
 // @public
 export interface CurrentBlock extends Span {
@@ -101,13 +120,38 @@ export function diffEdit(previous: readonly BlockSnapshot[], next: readonly Bloc
 export const HEADING_LEVELS: readonly [1, 2, 3];
 
 // @public
+export function insertNode(doc: ManuscriptDoc, input: Place, node: ManuscriptNode, id?: NodeId): NodeId;
+
+// @public
 export function isBlockId(value: unknown): value is BlockId;
 
 // @public
 export function isMarkType(name: string): name is MarkType;
 
 // @public
+export function isNodeId(value: unknown): value is NodeId;
+
+// @public
+export function isPart(parent: Parent): parent is Part;
+
+// @public
 export function levelOf(block: BlockSnapshot): number | undefined;
+
+// @public
+export type Manuscript = Automerge.Doc<ManuscriptDoc>;
+
+// @public
+export type ManuscriptDoc = {
+    title: string;
+    format: string;
+    front: NodeId[];
+    body: NodeId[];
+    back: NodeId[];
+    nodes: Record<NodeId, ManuscriptNode>;
+};
+
+// @public
+export type ManuscriptNode = PieceNode | SectionNode | ContentsNode;
 
 // @public
 export const MARK_TYPES: readonly ["bold", "italic"];
@@ -125,6 +169,49 @@ export type MarkType = (typeof MARK_TYPES)[number];
 export function memoize<Key extends object, Value>(compute: (key: Key) => Value): (key: Key) => Value;
 
 // @public
+export type NodeId = string & {
+    readonly __brand: "NodeId";
+};
+
+// @public
+export type Parent = Part | NodeId;
+
+// @public
+export type Part = (typeof PARTS)[number];
+
+// @public
+export const PARTS: readonly ["front", "body", "back"];
+
+// @public
+export interface PieceEntry {
+    // (undocumented)
+    readonly id: NodeId;
+    // (undocumented)
+    readonly piece: PieceNode;
+}
+
+// @public
+export interface PieceNode {
+    chapterUrl: string;
+    // (undocumented)
+    kind: "piece";
+    // (undocumented)
+    title: string;
+    words: number;
+}
+
+// @public
+export function piecesOf(manuscript: ManuscriptDoc, parent: Parent): PieceEntry[];
+
+// @public
+export interface Place {
+    // (undocumented)
+    readonly index: number;
+    // (undocumented)
+    readonly parent: Parent;
+}
+
+// @public
 export interface PreviousBlock extends Span {
     // (undocumented)
     readonly id: BlockId;
@@ -135,6 +222,16 @@ export function readChapter(chapter: Chapter): BlockSnapshot[];
 
 // @public
 export function resolveBlockIds(previous: readonly PreviousBlock[], current: readonly CurrentBlock[], isHeldElsewhere?: (id: BlockId) => boolean, mint?: () => BlockId): BlockId[];
+
+// @public
+export interface SectionNode {
+    // (undocumented)
+    children: NodeId[];
+    // (undocumented)
+    kind: "section";
+    // (undocumented)
+    title: string;
+}
 
 // @public
 export interface Segment {
@@ -170,6 +267,12 @@ export function toSnapshot(input: BlockFields): BlockSnapshot;
 
 // @public
 export function toSpans(segments: readonly Segment[]): MarkSpan[];
+
+// @public
+export function writeEdit(doc: ChapterDoc, edit: ChapterEdit): void;
+
+// @public
+export function writePieceWords(doc: ManuscriptDoc, id: NodeId, words: number): void;
 
 // (No @packageDocumentation comment for this package)
 

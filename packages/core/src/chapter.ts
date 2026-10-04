@@ -22,12 +22,12 @@ export interface StoredBlock {
 }
 
 /**
- * One chapter: block order plus the blocks themselves, keyed by permanent id.
+ * One chapter: block order plus the blocks themselves, keyed by permanent id. Its title lives in
+ * the manuscript tree, the one place a piece is named.
  * A type alias, not an interface: Automerge requires a plain-record root type.
  */
 // eslint-disable-next-line @typescript-eslint/consistent-type-definitions -- Automerge root type
 export type ChapterDoc = {
-  title: string;
   order: BlockId[];
   blocks: Record<BlockId, StoredBlock>;
 };
@@ -98,20 +98,25 @@ function writeBlock(doc: ChapterDoc, block: BlockSnapshot): void {
 }
 
 /**
- * Applies an editor edit as one Automerge change. Fields that already match are not written,
- * so an edit that changes nothing records nothing.
+ * Writes an editor edit into a chapter inside an Automerge change. Fields that already match are
+ * not written, so an edit that changes nothing records nothing.
  */
+export function writeEdit(doc: ChapterDoc, edit: ChapterEdit): void {
+  for (const id of edit.removed) Reflect.deleteProperty(doc.blocks, id);
+  for (const block of edit.changed) writeBlock(doc, block);
+  syncList(doc.order, edit.order);
+}
+
+/** Applies an editor edit as one Automerge change (see `writeEdit`). */
 export function applyEdit(chapter: Chapter, edit: ChapterEdit): Chapter {
   return Automerge.change(chapter, (doc) => {
-    for (const id of edit.removed) Reflect.deleteProperty(doc.blocks, id);
-    for (const block of edit.changed) writeBlock(doc, block);
-    syncList(doc.order, edit.order);
+    writeEdit(doc, edit);
   });
 }
 
 /** Creates a chapter holding `blocks`, recorded as its first change. */
-export function createChapter(title: string, blocks: readonly BlockSnapshot[]): Chapter {
-  const empty = Automerge.from<ChapterDoc>({ title, order: [], blocks: {} });
+export function createChapter(blocks: readonly BlockSnapshot[]): Chapter {
+  const empty = Automerge.from<ChapterDoc>({ order: [], blocks: {} });
   return applyEdit(empty, { order: blocks.map((block) => block.id), changed: blocks, removed: [] });
 }
 

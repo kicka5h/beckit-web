@@ -27,7 +27,14 @@ interface Claim {
 }
 
 const ULID_PATTERN = /^[0-9A-HJKMNP-TV-Z]{26}$/;
-const mintUlid = monotonicFactory();
+
+/** Mints a new ULID: unique, and sortable by the time it was minted. Internal to core. */
+export const mintUlid = monotonicFactory();
+
+/** Whether a value is a ULID. Internal to core; ids are checked through their own predicates. */
+export function isUlid(value: unknown): value is string {
+  return typeof value === "string" && ULID_PATTERN.test(value);
+}
 
 /** Mints a new, time-sortable block id. */
 export function createBlockId(): BlockId {
@@ -36,7 +43,7 @@ export function createBlockId(): BlockId {
 
 /** Whether a value is an id this app minted. */
 export function isBlockId(value: unknown): value is BlockId {
-  return typeof value === "string" && ULID_PATTERN.test(value);
+  return isUlid(value);
 }
 
 /**
