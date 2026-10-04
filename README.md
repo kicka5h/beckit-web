@@ -15,6 +15,27 @@ pnpm bench    # 150k-word load benchmark
 
 Requires Node 22+ and pnpm 10.
 
+## Self-hosting
+
+Beckit runs anywhere Docker or Podman does, with no Google Cloud account: one container serves the
+app and syncs it, keeping every document (with its full history) in a volume.
+
+```sh
+SYNC_PASSPHRASE='a long passphrase' docker compose up -d        # or: podman compose up -d
+```
+
+Open `http://localhost:8080`, open the outline, and sign in to sync with the passphrase; each
+device enters it once. The offline app and Add to Home Screen need HTTPS, so to reach Beckit from
+your other devices, point a domain at the machine and let the bundled Caddy fetch a certificate:
+
+```sh
+BECKIT_DOMAIN=beckit.example.com docker compose --profile https up -d
+```
+
+Back up the `beckit-data` volume; it is the server's copy of everything. Without compose:
+`docker build -t beckit .` then
+`docker run -p 8080:8080 -e SYNC_PASSPHRASE=… -v beckit-data:/data beckit`.
+
 ## Deploy
 
 Every merge to `main` that passes CI is shipped by `.github/workflows/deploy.yml`: the sync

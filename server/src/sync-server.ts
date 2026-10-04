@@ -7,6 +7,7 @@ import type { Duplex } from "node:stream";
 import { allowOrigin, bearerTokenOf, readJson, sendJson } from "./http.ts";
 import { claimLibraryUrl, readLibraryUrl } from "./library-registry.ts";
 import type { ObjectStore } from "./object-store.ts";
+import type { StaticHandler } from "./static-files.ts";
 import { createObjectStorageAdapter } from "./storage-adapter.ts";
 import type { VerifyToken, Writer } from "./writers.ts";
 
@@ -14,8 +15,10 @@ import type { VerifyToken, Writer } from "./writers.ts";
 export interface SyncServerOptions {
   readonly store: ObjectStore;
   readonly verify: VerifyToken;
-  /** Origins the app is served from, allowed to call the HTTP API. */
+  /** Origins the app is served from, allowed to call the HTTP API from elsewhere. */
   readonly allowedOrigins: ReadonlySet<string>;
+  /** Serves the built app from this same address, when self-hosted. */
+  readonly serveStatic?: StaticHandler;
 }
 
 /** A running sync server: its HTTP server, and a way to stop it. */
@@ -65,9 +68,19 @@ async function handleLibrary(
   sendJson(response, 200, { libraryUrl: await claimLibraryUrl(store, writer.uid, url) });
 }
 
+/** Serves the app for any other path when self-hosted; otherwise there is nothing there. */
+async function serveOther(
+  request: IncomingMessage,
+  response: ServerResponse,
+  serveStatic: StaticHandler | undefined,
+): Promise<void> {
+  const isServed = serveStatic ? await serveStatic(request, response) : false;
+  if (!isServed) sendJson(response, 404, { error: "Not found" });
+}
+
 /**
- * Routes plain HTTP requests: a health check for Cloud Run, and the library registry that lets a
- * new device find the writer's projects.
+ * Routes plain HTTP requests: a health check, the library registry that lets a new device find
+ * the writer's projects, and, when self-hosted, the app itself.
  */
 async function handleRequest(
   request: IncomingMessage,
@@ -79,7 +92,7 @@ async function handleRequest(
   if (path === HEALTH_PATH) {
     sendJson(response, 200, { ok: true });
   } else if (path !== LIBRARY_PATH) {
-    sendJson(response, 404, { error: "Not found" });
+    await serveOther(request, response, options.serveStatic);
   } else if (request.method === "OPTIONS") {
     response.writeHead(isAllowedOrigin ? 204 : 403).end();
   } else if (request.method === "GET" || request.method === "PUT") {

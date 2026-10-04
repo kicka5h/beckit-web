@@ -1,4 +1,8 @@
 **/node_modules
 **/dist
+**/dist-sync
 **/test-results
+**/playwright-report
+**/temp
+**/coverage
 .git

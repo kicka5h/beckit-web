@@ -9,7 +9,7 @@
   "scripts": {
     "start": "node src/main.ts",
     "typecheck": "tsc -p tsconfig.json",
-    "dev": "node src/dev.ts"
+    "dev": "node src/main.ts"
   },
   "dependencies": {
     "@automerge/automerge-repo": "2.5.6",

@@ -20,10 +20,17 @@ const repo = createDeviceRepo();
 const initialProject = openProject(repo, browserSettings);
 void requestPersistentStorage();
 
+/** The sync server's origin: the configured one, or this page's own when it is "/". */
+function serverUrlOf(configured: string): string {
+  return new URL(configured, window.location.href).origin;
+}
+
 function startSync(): SyncServices | undefined {
-  const accounts = createAccounts(import.meta.env);
-  const serverUrl = import.meta.env.VITE_SYNC_URL;
-  if (!accounts || !serverUrl) return undefined;
+  const configured = import.meta.env.VITE_SYNC_URL;
+  if (!configured) return undefined;
+  const serverUrl = serverUrlOf(configured);
+  const accounts = createAccounts(import.meta.env, browserSettings, serverUrl);
+  if (!accounts) return undefined;
   const sync = new SyncClient({ repo, accounts, settings: browserSettings, serverUrl });
   // Sync starts once the open project is loaded, so its first look at the library finds it.
   void initialProject.then(() => {

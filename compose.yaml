@@ -1,0 +1,38 @@
+# Beckit, self-hosted. Works with `docker compose`, `podman compose` or `podman-compose`.
+#
+#   SYNC_PASSPHRASE='a long passphrase' docker compose up -d
+#
+# Then open http://localhost:8080. To reach it from other devices, over HTTPS as the offline app
+# and Home Screen install need, also start the bundled Caddy with your domain:
+#
+#   BECKIT_DOMAIN=beckit.example.com docker compose --profile https up -d
+services:
+  beckit:
+    build: .
+    image: localhost/beckit:latest
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      SYNC_PASSPHRASE: ${SYNC_PASSPHRASE:?Set SYNC_PASSPHRASE to the passphrase devices sign in with}
+    volumes:
+      # Every manuscript and chapter, with its full history. Back this volume up.
+      - beckit-data:/data
+
+  caddy:
+    image: docker.io/library/caddy:2
+    profiles: [https]
+    restart: unless-stopped
+    # Fetches and renews a certificate for the domain; WebSockets pass straight through.
+    command: caddy reverse-proxy --from ${BECKIT_DOMAIN:?Set BECKIT_DOMAIN to your domain} --to beckit:8080
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - caddy-data:/data
+    depends_on:
+      - beckit
+
+volumes:
+  beckit-data:
+  caddy-data:
