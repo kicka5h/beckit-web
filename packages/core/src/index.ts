@@ -22,6 +22,8 @@ export {
 export type { Chapter, ChapterDoc, ChapterEdit, StoredBlock } from "./chapter.ts";
 export { applyEdit, createChapter, readChapter, writeEdit } from "./chapter.ts";
 export { diffEdit } from "./edit.ts";
+export type { Format, FormatPage, PlannedPage } from "./formats.ts";
+export { formatOf, FORMATS, planProject } from "./formats.ts";
 export type { BlockId, CurrentBlock, PreviousBlock } from "./ids.ts";
 export { isBlockId, resolveBlockIds } from "./ids.ts";
 export type {
@@ -30,23 +32,32 @@ export type {
   ManuscriptDoc,
   ManuscriptNode,
   NodeId,
+  OutlineEntry,
   Parent,
   Part,
   PieceEntry,
   PieceNode,
   Place,
   SectionNode,
+  TreeStep,
 } from "./manuscript.ts";
 export {
   childIdsOf,
   countProjectWords,
   createManuscriptDoc,
   createNodeId,
+  findPlace,
   insertNode,
   isNodeId,
   isPart,
+  moveNode,
+  outlineOf,
   PARTS,
   piecesOf,
+  placeAfterStep,
+  removeNode,
+  renameNode,
+  sectionOf,
   writePieceWords,
 } from "./manuscript.ts";
 export type { Segment } from "./marks.ts";

@@ -36,6 +36,13 @@
   --selection-strength: 30%;
   --status-dot-size: 7px;
   --status-dot-border: 1.5px;
+  --sidebar-width: 300px;
+  /* How far the page moves aside for the outline. On phones the outline covers the page instead,
+     and closes once a page is picked (read by Workspace.tsx). */
+  --outline-push: var(--sidebar-width);
+  --outline-overlays: 0;
+  --row-indent: var(--space-3);
+  --overlay-shadow: 0 0 40px rgb(0 0 0 / 45%);
 
   color-scheme: dark;
 }
@@ -48,5 +55,7 @@
     --header-inset: var(--space-3);
     --page-inset: var(--space-4);
     --page-end-space: 40vh;
+    --outline-push: 0px;
+    --outline-overlays: 1;
   }
 }

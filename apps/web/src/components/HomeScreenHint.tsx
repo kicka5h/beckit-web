@@ -31,7 +31,7 @@ export function HomeScreenHint({ settings }: HomeScreenHintProps): ReactElement 
         Keep your writing safe on this device: tap Share, then Add to Home Screen, and open Beckit
         from there.
       </span>
-      <button type="button" className="hint__dismiss" onClick={dismiss}>
+      <button type="button" className="control hint__dismiss" onClick={dismiss}>
         Got it
       </button>
     </aside>
