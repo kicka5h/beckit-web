@@ -18,6 +18,8 @@ export function statusLabelOf(save: SaveStatus | undefined, sync: SyncState | un
   switch (sync?.kind) {
     case "offline":
       return toWaitingLabel(sync.waiting);
+    case "libraryMissing":
+      return "Can't reach your projects yet, retrying";
     case "syncing":
       return "Syncing…";
     case "synced":
@@ -30,5 +32,5 @@ export function statusLabelOf(save: SaveStatus | undefined, sync: SyncState | un
 /** Whether the header's status dot shows settled (accent) rather than in progress (warning). */
 export function isSettled(save: SaveStatus | undefined, sync: SyncState | undefined): boolean {
   if (save === "saving" || save === "failed") return false;
-  return sync?.kind !== "syncing" && sync?.kind !== "offline";
+  return sync?.kind === "synced" || sync?.kind === "signedOut" || sync === undefined;
 }

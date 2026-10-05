@@ -20,6 +20,7 @@ describe("statusLabelOf", () => {
       "Offline, 3 documents to sync",
     );
     expect(statusLabelOf("saved", { kind: "synced", at: Date.now() })).toMatch(/^Synced \d/);
+    expect(statusLabelOf("saved", { kind: "libraryMissing" })).toMatch(/retrying$/);
   });
 });
 
@@ -29,5 +30,6 @@ describe("isSettled", () => {
     expect(isSettled("saved", undefined)).toBe(true);
     expect(isSettled("saving", undefined)).toBe(false);
     expect(isSettled("saved", { kind: "offline", waiting: 0 })).toBe(false);
+    expect(isSettled("saved", { kind: "libraryMissing" })).toBe(false);
   });
 });

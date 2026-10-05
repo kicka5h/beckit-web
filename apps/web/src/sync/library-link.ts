@@ -60,9 +60,15 @@ async function isWorthKeeping(repo: Repo, manuscriptUrl: string): Promise<boolea
 }
 
 /**
+ * What adopting the writer's library did: nothing (this device already uses it), adopted it, or
+ * found it unavailable, which is worth trying again.
+ */
+export type Adoption = "same" | "adopted" | "unavailable";
+
+/**
  * Makes the writer's library this device's library: every project this device made with real
  * writing in it joins it, and an untouched first-launch project is left behind. When the open
- * project is that untouched one, the writer's first project opens instead. Returns whether the
+ * project is that untouched one, the writer's first project opens instead. Says whether the
  * device's library changed, so the app can reopen.
  */
 export async function adoptLibrary(
@@ -70,10 +76,10 @@ export async function adoptLibrary(
   settings: DeviceSettings,
   local: DocHandle<LibraryDoc>,
   writerLibraryUrl: string,
-): Promise<boolean> {
-  if (writerLibraryUrl === local.url) return false;
+): Promise<Adoption> {
+  if (writerLibraryUrl === local.url) return "same";
   const writerLibrary = await findStored<LibraryDoc>(repo, writerLibraryUrl);
-  if (!writerLibrary) return false;
+  if (!writerLibrary) return "unavailable";
   for (const url of local.doc().projects) {
     if (await isWorthKeeping(repo, url)) addToLibrary(writerLibrary, url);
   }
@@ -83,7 +89,7 @@ export async function adoptLibrary(
   if (first && openUrl && !(await isWorthKeeping(repo, openUrl))) {
     rememberTarget(settings, { manuscriptUrl: first });
   }
-  return true;
+  return "adopted";
 }
 
 /**
