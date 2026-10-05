@@ -31,6 +31,9 @@ don't restyle unless they ask, and ask before changing any of these choices:
   Unicode symbols (iOS turns those into emoji). Headings are quiet labels.
 - Adding is a "+" beside each heading; where it offers more than one thing (the body's piece
   or section) it opens a menu, so look-alike actions never sit side by side.
+- The title bar holds only the title, an info button and a status checkmark (green once saved
+  and synced, orange before); counts, reading level and the sync status in words open from
+  the info button.
 - Not done yet, offered as options: a light mode, New York for prose.
 
 ## Map

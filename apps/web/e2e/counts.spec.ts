@@ -26,7 +26,8 @@ test.describe("word counts and reading level", () => {
     await page.goto("/");
     await page.locator(".prose").click();
     await page.keyboard.type(TEXT);
-    const header = page.locator(".header__meta");
+    await page.getByRole("button", { name: "Writing details" }).click();
+    const header = page.locator(".header__details");
     await expect(header).toContainText("17 words");
     await expect(header).toContainText("17 in project");
     await expect(header).toContainText("4th grade or lower");
