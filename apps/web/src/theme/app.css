@@ -58,29 +58,50 @@ body {
   flex-wrap: wrap;
   align-items: center;
   justify-content: flex-end;
-  gap: var(--space-1) var(--space-4);
+  gap: var(--space-1);
 }
 
 .header__forms {
   color: var(--accent-color);
 }
 
+/* Where the latest edit has got, as a checkmark: green once saved and synced, orange before. */
 .header__status {
+  width: var(--icon-size);
+  height: var(--icon-size);
+  background: var(--warning-color);
+  mask: var(--check-icon) center / contain no-repeat;
+}
+
+.header__status--saved {
+  background: var(--settled-color);
+}
+
+/* The status in words, for screen readers; the details card shows it on screen. */
+.header__status-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* The card the info button opens: counts, reading level and sync, one per line. */
+.header__details {
+  position: absolute;
+  top: 100%;
+  right: var(--header-inset);
+  min-width: var(--details-width);
+  padding: var(--space-2) var(--space-3);
   display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: var(--space-2);
-}
-
-.header__status::before {
-  content: "";
-  width: var(--status-dot-size);
-  height: var(--status-dot-size);
-  border-radius: 50%;
-  border: var(--status-dot-border) solid var(--warning-color);
-}
-
-.header__status--saved::before {
-  border-color: var(--accent-color);
+  border-radius: var(--card-radius);
+  background: var(--raised-color);
+  box-shadow: var(--card-shadow);
+  color: var(--ink-color);
+  font-size: var(--ui-size);
 }
 
 .hint {
@@ -545,4 +566,8 @@ button {
 
 .icon--account {
   --icon: var(--account-icon);
+}
+
+.icon--info {
+  --icon: var(--info-icon);
 }

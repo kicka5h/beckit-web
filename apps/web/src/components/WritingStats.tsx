@@ -16,7 +16,7 @@ export interface WritingStatsProps {
 }
 
 /**
- * The counts beside the save status: words in the highlighted text or the piece, words in the
+ * The counts in the header's details card: words in the highlighted text or the piece, words in the
  * project, the reading level, and how often each form of a highlighted word appears. All computed
  * on this device, so they work in airplane mode.
  */
