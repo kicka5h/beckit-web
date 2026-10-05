@@ -73,3 +73,10 @@ Google sign-in needs an OAuth client, and Google only makes or edits those in it
    `https://<project-id>.web.app/__/auth/handler` to its authorized redirect URIs.
 
 Both stay done after that.
+
+## Branch protection
+
+`./infra/protect-main.sh` protects `main`: changes arrive only through pull requests whose CI
+`check` job passed, for admins too, and `main` can't be force-pushed or deleted. Pull requests
+need no approving review, since one writer works here. `setup.sh` runs it at the end; run it
+alone with `gh` signed in as a repository admin.

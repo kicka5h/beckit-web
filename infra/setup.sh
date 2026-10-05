@@ -347,5 +347,6 @@ remove_legacy_backup_secret
 create_budget
 set_github_secrets
 configure_apple_sign_in
+GITHUB_REPO="$GITHUB_REPO" "$(dirname "$0")/protect-main.sh"
 check_google_sign_in
 printf '\nDone.\n'
