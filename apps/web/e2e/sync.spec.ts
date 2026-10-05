@@ -8,9 +8,19 @@ function proseOf(page: Page): ReturnType<Page["locator"]> {
   return page.locator(".prose");
 }
 
-/** Opens the app on a fresh device: a browser context with nothing stored. */
-async function openDevice(browser: Browser): Promise<Page> {
-  const page = await (await browser.newContext()).newPage();
+/**
+ * Opens the app on a fresh device: a browser context with nothing stored. `failedLibraryLookups`
+ * makes the server's library lookup fail that many times first.
+ */
+async function openDevice(browser: Browser, failedLibraryLookups = 0): Promise<Page> {
+  const context = await browser.newContext();
+  let failuresLeft = failedLibraryLookups;
+  await context.route("**/library", async (route) => {
+    if (failuresLeft === 0) return route.continue();
+    failuresLeft--;
+    return route.fulfill({ status: 503 });
+  });
+  const page = await context.newPage();
   await page.goto("/");
   return page;
 }
@@ -61,5 +71,14 @@ test.describe("sync", () => {
       await expect(proseOf(page)).toContainText(`Phone, offline: ${LAPTOP_TEXT}`, SYNC_WAIT);
       await expect(proseOf(page)).toContainText("A new paragraph from the laptop, offline.");
     }
+  });
+
+  test("keeps trying to reach the writer's projects, and says so meanwhile", async ({
+    browser,
+  }) => {
+    const tablet = await openDevice(browser, 1);
+    await expect(tablet.getByRole("status")).toHaveText(/retrying$/, SYNC_WAIT);
+    await expect(proseOf(tablet)).toContainText(LAPTOP_TEXT, SYNC_WAIT);
+    await expectSynced(tablet);
   });
 });

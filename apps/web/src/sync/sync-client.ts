@@ -9,11 +9,12 @@ import { openLibrary } from "../project/library.ts";
 import { adoptLibrary, claimLibrary, loadEverything } from "./library-link.ts";
 
 /**
- * Where sync stands, as the header shows it: signed out, offline with changes waiting, syncing,
- * or synced at a time.
+ * Where sync stands, as the header shows it: signed out, offline with changes waiting, unable to
+ * find the writer's library yet (and retrying), syncing, or synced at a time.
  */
 export type SyncState =
   | { readonly kind: "signedOut" }
+  | { readonly kind: "libraryMissing" }
   | { readonly kind: "offline"; readonly waiting: number }
   | { readonly kind: "syncing"; readonly waiting: number }
   | { readonly kind: "synced"; readonly at: number };
@@ -28,12 +29,15 @@ export interface SyncClientOptions {
 }
 
 const SIGNED_OUT: SyncState = { kind: "signedOut" };
+const LIBRARY_MISSING: SyncState = { kind: "libraryMissing" };
 /** Idle sockets cost Cloud Run time, so the socket closes after this long without a change. */
 const IDLE_MILLISECONDS = 10 * 60_000;
 /** Reconnect with a fresh token before the hour-long ID token and Cloud Run's request cap run out. */
 const RECONNECT_MILLISECONDS = 50 * 60_000;
 const STATUS_MILLISECONDS = 2000;
 const RETRY_MILLISECONDS = 5000;
+/** How soon to ask the server for the writer's library again after not getting it. */
+const LIBRARY_RETRY_MILLISECONDS = 10_000;
 
 function toSocketUrl(serverUrl: string, token: string): string {
   return `${serverUrl.replace(/^http/, "ws")}/sync?token=${encodeURIComponent(token)}`;
@@ -64,6 +68,9 @@ export class SyncClient {
   #serverStorageId: StorageId | undefined;
   #idleTimer: ReturnType<typeof setTimeout> | undefined;
   #reconnectTimer: ReturnType<typeof setTimeout> | undefined;
+  #libraryTimer: ReturnType<typeof setTimeout> | undefined;
+  /** Whether the last attempt to join the writer's library failed; another is scheduled. */
+  #isLibraryMissing = false;
 
   constructor(options: SyncClientOptions) {
     this.#options = options;
@@ -136,16 +143,42 @@ export class SyncClient {
     repo.networkSubsystem.addNetworkAdapter(adapter);
     this.#armTimers();
     await adapter.whenReady();
-    await this.#linkLibrary(token);
+    await this.#joinLibrary(account);
   }
 
-  /** Joins this device to the writer's library and fetches everything in it. */
-  async #linkLibrary(token: string): Promise<void> {
+  /**
+   * Joins the writer's library, retrying until it works. Until then this device syncs only its
+   * own projects, so the header says so instead of showing "Synced".
+   */
+  async #joinLibrary(account: Account): Promise<void> {
+    clearTimeout(this.#libraryTimer);
+    try {
+      this.#isLibraryMissing = !(await this.#linkLibrary(await account.getToken()));
+    } catch (error) {
+      console.error("Could not join the writer's library", error);
+      this.#isLibraryMissing = true;
+    }
+    if (this.#isLibraryMissing && this.#adapter) {
+      this.#libraryTimer = setTimeout(() => {
+        void this.#joinLibrary(account);
+      }, LIBRARY_RETRY_MILLISECONDS);
+    }
+    this.#updateState();
+  }
+
+  /**
+   * Joins this device to the writer's library and fetches everything in it. Returns false when
+   * the server named a library it can't hand over yet.
+   */
+  async #linkLibrary(token: string): Promise<boolean> {
     const { repo, settings, serverUrl } = this.#options;
     const local = await openLibrary(repo, settings);
     const writerUrl = await claimLibrary(serverUrl, token, local.url);
-    if (await adoptLibrary(repo, settings, local, writerUrl)) this.#announceLibraryChange();
+    const adoption = await adoptLibrary(repo, settings, local, writerUrl);
+    if (adoption === "unavailable") return false;
+    if (adoption === "adopted") this.#announceLibraryChange();
     await loadEverything(repo, await openLibrary(repo, settings));
+    return true;
   }
 
   #announceLibraryChange(): void {
@@ -156,6 +189,7 @@ export class SyncClient {
   #disconnect(): void {
     clearTimeout(this.#idleTimer);
     clearTimeout(this.#reconnectTimer);
+    clearTimeout(this.#libraryTimer);
     const adapter = this.#adapter;
     if (!adapter) return;
     this.#adapter = undefined;
@@ -211,6 +245,7 @@ export class SyncClient {
     if (!this.#options.accounts.current()) return SIGNED_OUT;
     const waiting = this.#countWaiting();
     if (!navigator.onLine) return { kind: "offline", waiting };
+    if (this.#isLibraryMissing) return LIBRARY_MISSING;
     const isCaughtUp = waiting === 0 && this.#adapter?.isReady() === true;
     if (isCaughtUp && this.#state.kind !== "synced") this.#lastSyncedAt = Date.now();
     if (waiting === 0 && this.#lastSyncedAt > 0) return { kind: "synced", at: this.#lastSyncedAt };
